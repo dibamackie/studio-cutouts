@@ -73,7 +73,7 @@ export async function makeClip(frames: StudioFrame[], opts: SceneOptions, onProg
   if (frames.length === 0) throw new Error('no frames to export');
   const { width, height, fps } = CLIP;
   const total = Math.round(clipSeconds(frames.length) * fps);
-  const mb = await import('mediabunny'); // ~100 KB, only loaded when someone exports a clip
+  const mb = await import('mediabunny'); // ~180 KB gzipped, so it's only loaded when someone exports a clip
   const codec = await mb.getFirstEncodableVideoCodec(['avc', 'vp9', 'av1'], { width, height });
   if (!codec) return recordRealtime(frames, opts, onProgress);
 

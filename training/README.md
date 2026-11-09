@@ -108,3 +108,22 @@ The page's data file is generated from this output, so the website never shows n
 ```bash
 python -m studio_train.report --results RUNS/bench-full.jsonl --out ../src/bench-results.json
 ```
+
+## Failure analysis
+
+Score every image, group DIS-TE by object category (its file names encode it), and compare with BiRefNet_lite:
+
+```bash
+python -m studio_train.evaluate --model ../public/models/studio-v1.1.fp16.onnx --set PREPARED/dis-te --size 512 --per-image results/dis-te-per-image-studio.jsonl
+python -m studio_train.evaluate --model ZhengPeng7/BiRefNet_lite --preset birefnet --set PREPARED/dis-te --per-image results/dis-te-per-image-birefnet.jsonl
+python -m studio_train.failures --mine results/dis-te-per-image-studio.jsonl --reference results/dis-te-per-image-birefnet.jsonl
+```
+
+Output: [`results/dis-te-categories.md`](results/dis-te-categories.md). The hardest categories are thin, sparse structures (street lamps, rope, scaffolding), and the easiest are compact solid objects (vehicles, instruments).
+
+The visual gallery ([`../docs/failure-gallery.jpg`](../docs/failure-gallery.jpg)) is made from the Blender hard cases:
+
+```bash
+blender -b -P ../tools/render_hard_cases.py -- HARD_DIR
+python -m studio_train.gallery --model ../public/models/studio-v1.1.fp16.onnx --images HARD_DIR --out ../docs/failure-gallery.jpg
+```

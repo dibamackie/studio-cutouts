@@ -84,7 +84,15 @@ PRESETS: dict[str, Preset] = {
 }
 
 
-def evaluate(model: str, set_dir: Path, preset: str, size: int | None, limit: int | None) -> dict:
+def image_scores(pred: np.ndarray, gt: np.ndarray) -> dict[str, float]:
+    """IoU at 0.5 and MAE for one image (both arrays in [0, 1], same shape)."""
+    p, g = pred >= 0.5, gt >= 0.5
+    union = np.logical_or(p, g).sum()
+    iou = float(np.logical_and(p, g).sum() / union) if union else 1.0
+    return {"iou": round(iou, 4), "mae": round(float(np.abs(pred - gt).mean()), 4)}
+
+
+def evaluate(model: str, set_dir: Path, preset: str, size: int | None, limit: int | None, per_image: Path | None = None) -> dict:
     load, run, default_size = PRESETS[preset]
     size = size or default_size
     runner, megabytes, device = load(model)
@@ -92,14 +100,18 @@ def evaluate(model: str, set_dir: Path, preset: str, size: int | None, limit: in
     if limit and len(pairs) > limit:
         pairs = random.Random(0).sample(pairs, limit)  # same fixed subset as training validation
 
-    metrics, seconds = SODMetrics(), 0.0
+    metrics, seconds, rows = SODMetrics(), 0.0, []
     for image, mask in pairs:
         img, gt = read_pair(image, mask)
         t0 = time.perf_counter()
         pred = run(runner, img, size)
         seconds += time.perf_counter() - t0
-        full = Image.fromarray(pred.astype(np.float32)).resize((gt.shape[1], gt.shape[0]), Image.BILINEAR)
-        metrics.update(torch.from_numpy(np.asarray(full))[None], torch.from_numpy(gt)[None])
+        full = np.asarray(Image.fromarray(pred.astype(np.float32)).resize((gt.shape[1], gt.shape[0]), Image.BILINEAR))
+        metrics.update(torch.from_numpy(full)[None], torch.from_numpy(gt)[None])
+        if per_image:
+            rows.append({"image": image.name, **image_scores(full, gt)})
+    if per_image:
+        per_image.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
     return {
         "model": Path(model).name,
         "set": set_dir.name,
@@ -119,8 +131,9 @@ def main() -> None:
     ap.add_argument("--preset", choices=PRESETS, default="studio")
     ap.add_argument("--size", type=int)
     ap.add_argument("--limit", type=int, help="fixed random subset, matching training's --max-val")
+    ap.add_argument("--per-image", type=Path, help="also write each image's IoU and MAE to this JSON-lines file")
     args = ap.parse_args()
-    print(json.dumps(evaluate(args.model, args.set, args.preset, args.size, args.limit)))
+    print(json.dumps(evaluate(args.model, args.set, args.preset, args.size, args.limit, args.per_image)))
 
 
 if __name__ == "__main__":
