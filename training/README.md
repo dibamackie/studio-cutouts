@@ -53,7 +53,7 @@ python -m studio_train.train --data PREPARED --train duts-tr dis-tr --val duts-t
 python -m studio_train.export --ckpt RUNS/first/best.pt --out ../public/models
 ```
 
-`export.py` writes fp32 and fp16 ONNX files plus a JSON model card, and fails if either file's output differs from PyTorch by more than the tolerance (1e-4 for fp32, 2e-2 for fp16) at 320 and 512 px.
+`export.py` writes fp32 and fp16 ONNX files plus a JSON model card, and fails if either file's output differs from PyTorch by more than the tolerance (1e-4 for fp32, 2e-2 for fp16) at 320 and 512 px. The fp16 file keeps the 8 `ReduceMean` operations (the squeeze-and-excitation averages) in fp32: ONNX Runtime's WebGPU backend sums them in fp16 and overflowed, which this CPU-based check cannot catch. See the root README.
 
 Score any ONNX model, including the U²-Netp baseline, at each test image's own resolution:
 

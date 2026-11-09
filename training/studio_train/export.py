@@ -46,8 +46,18 @@ def export_onnx(module: torch.nn.Module, path: Path, size: int = 320) -> None:
     onnx.checker.check_model(str(path))
 
 
+# The squeeze-and-excitation blocks average a whole feature map (256×256 values at 512 px input).
+# ONNX Runtime's WebGPU backend sums that in fp16, which overflows past 65,504 and wrecks the mask
+# on some images; the CPU sums in fp32, so CPU-based parity checks never caught it.
+FP32_OPS = ["ReduceMean"]
+
+
 def to_fp16(src: Path, dst: Path) -> None:
-    model = float16.convert_float_to_float16(onnx.load(str(src)), keep_io_types=True)  # I/O stays float32 for JS
+    model = float16.convert_float_to_float16(
+        onnx.load(str(src)),
+        keep_io_types=True,  # I/O stays float32 for JS
+        op_block_list=FP32_OPS,
+    )
     onnx.save(model, str(dst))
 
 

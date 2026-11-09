@@ -18,7 +18,7 @@ export const MODELS: Record<ModelId, ModelSpec> = {
   'studio-v1': {
     id: 'studio-v1',
     label: 'Studio v1',
-    file: 'studio-v1.fp16.onnx',
+    file: 'studio-v1.1.fp16.onnx', // v1.1: same weights, re-exported with the SE-block averages kept in fp32 (WebGPU fp16 overflow)
     megabytes: 9.1,
     inputSize: { webgpu: 512, wasm: 384 }, // 512 scores best on DIS-VD; 384 keeps the CPU path near 200 ms
     contract: 'unit',

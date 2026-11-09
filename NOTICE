@@ -1,11 +1,11 @@
 This project includes third-party material:
 
-public/models/studio-v1.fp16.onnx
+public/models/studio-v1.1.fp16.onnx
   Trained for this project (code in training/, MIT). The weights were learned from DUTS
   (http://saliencydetection.net/duts/, no explicit license; research use) and DIS5K
   (https://github.com/xuebinqin/DIS, research use; commercial use requires separate terms from its authors),
   with COCO val2017 images as synthetic backgrounds. Treat these weights as research and demo use only.
-  sha256: 419124062a2fd6c5cf6916357beaf22e3c1323a8285075406ce3a31151308b62
+  sha256: 816d9cf0f940f04da931d90b6632ab95b3b54e7599bac165e60418f7ae720ba1
 
 public/models/u2netp.onnx
   U²-Netp, from "U²-Net: Going Deeper with Nested U-Structure for Salient Object Detection"

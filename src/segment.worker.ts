@@ -122,7 +122,6 @@ async function segment(id: number, bitmap: ImageBitmap) {
   if (!ctx) throw new Error('2D canvas unavailable in worker');
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(bitmap, 0, 0, inputSize, inputSize);
-  bitmap.close();
   const { data } = ctx.getImageData(0, 0, inputSize, inputSize);
 
   const t0 = performance.now();
@@ -162,13 +161,21 @@ async function bench(modelId: ModelId, backend: Backend, runs: number) {
   }
 }
 
-self.onmessage = async (e: MessageEvent<ToWorker>) => {
-  const msg = e.data;
+async function handle(msg: ToWorker) {
   try {
     if (msg.type === 'init') await init(msg.modelId, msg.preferred);
     else if (msg.type === 'segment') await segment(msg.id, msg.bitmap);
     else await bench(msg.modelId, msg.backend, msg.runs);
   } catch (err) {
     post({ type: 'error', id: msg.type === 'segment' ? msg.id : undefined, context: msg.type, message: String(err) });
+  } finally {
+    if (msg.type === 'segment') msg.bitmap.close();
   }
+}
+
+// One message at a time: an ORT session must not run twice at once, which would happen when a
+// new drop sends frames while the previous run's last frame is still being segmented.
+let queue = Promise.resolve();
+self.onmessage = (e: MessageEvent<ToWorker>) => {
+  queue = queue.then(() => handle(e.data));
 };

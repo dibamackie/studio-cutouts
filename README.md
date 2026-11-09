@@ -2,9 +2,9 @@
 
 **Live: [studio-cutouts.vercel.app](https://studio-cutouts.vercel.app)** · **[Benchmarks](https://studio-cutouts.vercel.app/bench.html)**
 
-Product cutouts that never leave your device. Drop in a product photo and the browser removes the background with a neural network I trained, running on your GPU (WebGPU) or CPU (WebAssembly). Nothing is uploaded.
+Product photos that never leave your device. Drop in a product photo, several photos, or a short phone video walking around the object. The browser cuts it out with a neural network I trained (running on your GPU via WebGPU, or your CPU via WebAssembly), stands it in a studio scene with a contact shadow and floor reflection, and, for several frames, turns it into a drag-to-spin 360° view. Nothing is uploaded.
 
-> **Status: milestone 3 of 6.** The app runs my own model (Studio v1), and a benchmark page compares it against U²-Netp on public test sets and times both on the visitor's device. Next: the studio scene, 360° spin viewer and social export. See [Roadmap](#roadmap).
+> **Status: milestone 4 of 6.** Studio scene and 360° spin are live; try the sample spin on the home page. Next: a 9:16 clip for social media and an embed snippet. See [Roadmap](#roadmap).
 
 ## Results
 
@@ -30,6 +30,15 @@ Speed, median ms per frame, measured with the [benchmark page](https://studio-cu
 
 On the desktop GPU, Studio v1 is about 3× faster than U²-Netp despite a 2.6× larger input, and on the CPU about 6× faster on both devices.
 
+**360° spin**, on the 5-second sample walkaround (960×540, desktop, WebGPU): 108 candidate frames scored for sharpness, 36 kept, all 36 cut out and placed in about **3 s**. Frame-to-frame wobble, in % of the object's height:
+
+| | Base height jumps | Size jumps | Sideways jumps |
+|---|---|---|---|
+| Raw video | 1.53% mean, 6.60% max | 2.77% mean, 7.85% max | 3.14% mean, 7.87% max |
+| Studio spin | **0.35%** mean, 1.36% max | **0.59%** mean, 2.59% max | 3.19% mean, 7.78% max |
+
+The base and size settle 4–5×. Sideways is left as filmed on purpose; see the engineering notes.
+
 ## Run it
 
 ```bash
@@ -44,13 +53,18 @@ Add `?model=u2netp` to the app's URL to compare against the baseline on your own
 ## How it works
 
 ```
-photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to the model's input size
-              │  ImageBitmap (transferred, zero-copy)
+files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by name │ a video: score 108 moments
+              │       for sharpness on a 160 px copy, keep the sharpest of every 3 → 36 frames (≤1024 px)
               ▼
-         Web Worker: RGB/255 → ONNX Runtime Web (WebGPU at 512 px, else WASM at 384 px) → Studio v1 → alpha
-              │  alpha bytes (transferred)
+          worker      each frame: RGB/255 → ONNX Runtime Web (WebGPU 512 px, else WASM 384 px) → alpha
               ▼
-         main thread: upscale mask, composite as alpha onto the full-resolution photo → PNG
+          pipeline    per frame: object box (ignoring stray specks) + mean colour of the object
+              │       across frames: median-smooth the boxes, match exposure to the median frame,
+              │       scale every frame to the same object height, stand it on the floor line
+              ▼
+          scene/spin  backdrop + contact shadow + floor reflection + object; drag, arrow keys, autoplay
+              ▼
+          exports     studio JPG (1080×1080) and transparent PNG cropped to the object
 ```
 
 - **Inference runs in a Web Worker**, so the page never freezes.
@@ -62,6 +76,8 @@ photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to the 
 
 ## Engineering notes
 
+- **fp16 overflowed on WebGPU, and CPU checks couldn't see it.** The first spin test cut out a ghost of the mug. Studio v1's squeeze-and-excitation blocks average a whole feature map (256×256 values at 512 px input). ONNX Runtime's WebGPU backend summed that in fp16, which overflows past 65,504. The CPU sums in fp32, so the export's CPU parity check passed. Comparing WebGPU against the CPU on 23 images: the fp16 model broke 3 of them at 512 px, while fp32 broke none. The fix keeps just those 8 `ReduceMean` operations in fp32 (`FP32_OPS` in `training/studio_train/export.py`). Same 9.1 MB file, same DIS-TE score (0.7735), and WebGPU now agrees with the CPU on all 23 (mean IoU 0.99). The model ships as `studio-v1.1.fp16.onnx` so returning visitors don't keep the cached broken file.
+- **Don't re-centre what the camera already centred.** Centring every frame on its bounding box made the mug jump sideways as its handle swung into view. Centring on the median column of the object's pixels was better, but measured against the handle-free rim it still added jitter (3.8% vs the raw 3.1% of object height per frame), because the anchor itself is noisy. The spin now corrects only slow aim drift (a 13-frame median), which leaves jitter at the raw level. Base height and size are re-normalized every frame, which is where the 4–5× gains come from.
 - **WebGPU isn't always faster.** On an Android 10 phone with an Imagination D-Series GPU, Studio v1 took 510 ms per frame on WebGPU and 183 ms on a single CPU thread; U²-Netp was slower on WebGPU too. The first version of the app chose WebGPU whenever it existed, which made that phone about 3× slower and added ~4.8 s of GPU setup. Hence the first-visit probe.
 
 - **Multithreaded WASM hangs inside a Web Worker** (ONNX Runtime Web 1.31.1): session creation never resolves with `numThreads > 1`, for both the WebGPU and WASM backends. The worker pins one thread. With Studio v1 the CPU fallback is still ~200 ms per photo, and the site doesn't need cross-origin isolation headers (COOP/COEP), which keeps static hosting and embedding simple.
@@ -73,7 +89,7 @@ photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to the 
 1. ✅ Baseline: off-the-shelf U²-Netp running in the browser end to end
 2. ✅ Training pipeline and synthetic data generator; first trained model. See [training/README.md](training/README.md)
 3. ✅ Swap in my model; benchmark page with quality tables and an on-device speed test (phone numbers still to collect)
-4. Studio scene (backdrops, contact shadow, reflection) and 360° spin viewer
+4. ✅ Studio scene (4 backdrops, contact shadow, reflection, exposure matching) and 360° spin viewer from photos or video
 5. Social export (9:16 clip) and embed snippet
 6. Deploy, demo GIF, failure gallery
 
@@ -83,3 +99,4 @@ photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to the 
 - Studio v1 weights: trained on DUTS and DIS5K, so they are for research and demo use only. See `NOTICE`.
 - Baseline model: [U²-Net / U²-Netp](https://github.com/xuebinqin/U-2-Net) by Xuebin Qin et al., Apache-2.0. ONNX export from [rembg](https://github.com/danielgatis/rembg).
 - Inference: [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), MIT.
+- Sample video: rendered for this project in Blender with [`tools/render_sample_mug.py`](tools/render_sample_mug.py); same license as the code.

@@ -7,7 +7,6 @@
   --signal: oklch(62% 0.19 35);
   --signal-ink: oklch(99% 0.005 85);
   --line: oklch(82% 0.02 75);
-  --check: oklch(88% 0.01 80);
 
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -24,7 +23,6 @@
     --ink: oklch(94% 0.012 85);
     --ink-soft: oklch(72% 0.015 80);
     --line: oklch(35% 0.015 60);
-    --check: oklch(28% 0.01 60);
   }
 }
 
@@ -76,15 +74,52 @@ main { width: 100%; max-width: 72rem; margin: 0 auto; padding: clamp(1.5rem, 4vw
 .status { font: 400 0.85rem var(--font-mono); color: var(--ink-soft); min-height: 1.5em; margin: 1rem 0; }
 
 .stage { display: grid; gap: 1rem; animation: rise 500ms var(--ease-out); }
-.sweep {
-  display: grid;
-  place-items: center;
-  padding: clamp(0.5rem, 2vw, 1.5rem);
-  background: repeating-conic-gradient(var(--check) 0 25%, transparent 0 50%) 0 0 / 20px 20px;
+.viewer { position: relative; justify-self: center; width: min(100%, 70dvh); }
+.viewer canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   border: 1px solid var(--line);
   box-shadow: 0 30px 60px -30px oklch(20% 0.02 60 / 0.35);
+  touch-action: pan-y; /* horizontal drags turn the object; vertical swipes still scroll the page */
 }
-.sweep canvas { max-width: 100%; max-height: 70dvh; height: auto; display: block; }
+.viewer canvas.spinnable { cursor: grab; }
+.viewer canvas.spinnable:active { cursor: grabbing; }
+.viewer canvas:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.spin-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  translate: -50% 0;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font: 500 0.72rem var(--font-mono);
+  letter-spacing: 0.06em;
+  color: oklch(98% 0 0);
+  background: oklch(20% 0.01 60 / 0.55);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.viewer-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
+.frame-count { font: 400 0.85rem var(--font-mono); color: var(--ink-soft); min-width: 5ch; text-align: center; }
+
+.backdrops { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; border: 0; padding: 0; margin: 0.5rem 0 0; }
+.backdrops legend { font: 500 0.7rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.5rem; }
+.swatch-option { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; cursor: pointer; }
+.swatch-option input[type='radio'] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.swatch { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--line); box-shadow: inset 0 -3px 6px oklch(0% 0 0 / 0.12); }
+.sw-white { background: linear-gradient(#fbfbfa 60%, #e2e0dc); }
+.sw-gradient { background: linear-gradient(#f6d5c4, #c9a8cf); }
+.sw-showroom { background: linear-gradient(#34343a 60%, #0d0d10); }
+.swatch-color { padding: 0; overflow: hidden; cursor: pointer; background: none; }
+.swatch-color::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch-color::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.swatch-color::-moz-color-swatch { border: 0; border-radius: 50%; }
+.swatch-option:has(input:checked) .swatch { outline: 2px solid var(--signal); outline-offset: 2px; }
+.swatch-option:has(input[type='radio']:focus-visible) .swatch { outline: 2px dashed var(--signal); outline-offset: 3px; }
+.check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; }
+.check input { accent-color: var(--signal); width: 1rem; height: 1rem; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 button {
@@ -151,3 +186,20 @@ button:disabled { opacity: 0.5; cursor: progress; transform: none; }
 /* Keep the model name visible while the table scrolls sideways on phones. */
 tbody th, thead tr:first-child th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; }
 tr.mine th { background: color-mix(in oklch, var(--signal) 9%, var(--paper)); }
+
+.sample-line { margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+button.link {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+button.link:hover { transform: none; text-decoration-thickness: 2px; }
+.spin-hint { white-space: nowrap; }
+@media (pointer: coarse) {
+  .keys-hint { display: none; } /* touchscreens have no arrow keys */
+}
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
