@@ -82,7 +82,9 @@ export async function buildFrames(
   const aspect = measured.length ? measured[0].original.width / measured[0].original.height : 1;
   const handheld = cameraMoved(measured.map((m) => m.top), raw.map((b) => b.y1 - b.y0), aspect);
   const anchors = handheld ? measured.map((m) => m.axis) : smoothBoxes(raw, STILL_ANCHOR_RADIUS, fullTurn).map((b) => b.cx);
-  const boxes = smoothBoxes(raw, SMOOTH_RADIUS, fullTurn).map((b, i) => ({ ...b, cx: anchors[i] }));
+  // Handheld: each frame has its own camera distance and height, so normalise each one on its own
+  // (smoothing over neighbours left a visible bounce on frames shot from a different distance).
+  const boxes = (handheld ? raw : smoothBoxes(raw, SMOOTH_RADIUS, fullTurn)).map((b, i) => ({ ...b, cx: anchors[i] }));
   const placements = placeFrames(boxes, measured.map((m) => ({ w: m.original.width, h: m.original.height })), SCENE_SIZE);
 
   const frames: StudioFrame[] = [];

@@ -22,6 +22,8 @@ Product photos that never leave your device. Drop in a product photo, several ph
 
 36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts.vercel.app) or as a [standalone embed](https://studio-cutouts.vercel.app/showcase/pill-bottle-spin.html) (3.0 MB, with Play/Pause and a Studio | Original switch, since this one includes the source photos); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
 
+What's left of the unevenness is in the photos themselves. Tracking how far the label slides between photos puts the hand-turned steps at roughly 8°–18° (one pair is nearly identical), adding up to about 360°. The viewer's crossfade hides most of that. A turntable video, or marks every 10° on a sheet under the object, removes it at the source. Automatic re-timing was tried and rejected: the same tracking reads a plain red mug's perfectly even orbit as steps from 0° to 30°.
+
 This capture also found a bug. WhatsApp names photos sent in the same second "x.jpeg", "x (1).jpeg", "x (2).jpeg", and a plain name sort puts "x (1)" before "x.jpeg", so the first photo of every second landed last and the spin jumped back and forth. Names are now compared without their extension (`compareFileNames`, tested on these exact names).
 
 ## Results
@@ -50,20 +52,15 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 | 36 frames over the whole video (before) | 1.84, and the spin turns 1.5 times per loop |
 | 36 frames over the detected turn | **0.86** |
 
-**360° spin**, from the 5-second sample walkaround: 108 candidate frames scored, 36 kept, all cut out and placed in about **3 s**. Frame-to-frame wobble, in % of object height (mean):
+**360° spin**, from the 5-second sample walkaround: 108 candidate frames scored, 36 kept, all cut out and placed in about **3 s**.
 
-| | Base height jumps | Size jumps | Sideways jumps |
+**Steadiness**, frame-to-frame wobble in % of object height (mean). Sideways is measured on the object's bottom band, which the stabilizer doesn't use as its reference. The top-edge bounce is measured on the rendered spin.
+
+| Capture | Camera detected as | Sideways: raw → spin | Top-edge bounce in the spin |
 |---|---|---|---|
-| Raw video | 1.53% | 2.77% | 3.32% |
-| Studio spin | **0.35%** | **0.59%** | **0.10%** |
-
-Sideways jitter for every capture, measured on the bottom band of the object (which the stabilizer doesn't use as its reference):
-
-| Capture | Camera detected as | Raw | Studio spin |
-|---|---|---|---|
-| Walkaround (handheld video) | moving | 3.32% | **0.10%** |
-| [Real-phone bottle photos](#from-a-real-phone) | moving | 1.20% | **0.23%** |
-| Turntable (phone still) | still | — | 0.18% at the top, left as filmed |
+| Walkaround (handheld video) | moving | 3.32% → **0.10%** | **0.22%** |
+| [Real-phone bottle photos](#from-a-real-phone) | moving | 1.20% → **0.23%** | **0.17%** |
+| Turntable (phone still) | still | already steady: 0.18% at the top | — |
 
 **Exports** from the same spin:
 
@@ -147,6 +144,7 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
   - **Measured on a part of the object the anchor doesn't use,** centering *every* frame (unsmoothed) on the object's axis wins clearly: the axis is the midpoint of its top-band and bottom-band centers, which skips mid-height handles. Bottle photos went to 0.23%, the walkaround to 0.10%.
   - **On a still turntable** the same rule only adds noise (0.18% → 2.8%), because there's no camera motion to remove.
   - **So the stabilizer now checks** how far the object's top shifts between frames (median above 0.5% of its height means handheld) and picks the anchor accordingly.
+  - **The same goes for size and floor position.** Smoothing them over 5 frames left a visible bounce on photos shot from a different distance (the bottle's top edge jumped 1.07% per frame on average, up to 3.5%). Handheld captures are now normalized one frame at a time: 0.17%, max 0.8%.
 - **BiRefNet's ONNX export ran at about one image per minute** on CUDA, because `deform_conv2d` has no native ONNX operator. It was scored with its original PyTorch code instead (pinned, reviewed revision): about 130 ms per image.
 - **Multithreaded WASM hangs inside a Web Worker** (ONNX Runtime Web 1.31.1), so the worker uses one thread. The upside: the site needs no cross-origin isolation headers, which keeps static hosting and embedding simple.
 
