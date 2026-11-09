@@ -1,5 +1,7 @@
 # Studio
 
+**Live: [studio-cutouts.vercel.app](https://studio-cutouts.vercel.app)**
+
 Product cutouts that never leave your device. Drop in a product photo and the browser removes the background with a neural network running on your GPU (WebGPU) or CPU (WebAssembly). Nothing is uploaded.
 
 > **Status: milestone 1 of 6.** The pipeline runs end to end with an off-the-shelf baseline model (U²-Netp). The next milestones replace it with a model I train myself, then add the studio scene, 360° spin viewer and social export. See [Roadmap](#roadmap).
@@ -32,14 +34,15 @@ photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to 320�
 
 ## Measurements so far (baseline model)
 
-Desktop Chrome, production build, 1280×850 photo:
+Desktop Chrome, 1280×850 photo, live deployment on Vercel:
 
 | | |
 |---|---|
 | Model download | 4.4 MB (U²-Netp ONNX, fp32) |
 | Runtime download | 28.7 MB WASM (7.3 MB gzipped): ONNX Runtime's WebGPU build |
-| Load (download from cache + session + warm-up) | ~0.8–1.6 s |
-| Inference, WebGPU | ~57 ms (warm) |
+| Ready to use, first visit | ~5.5 s (dominated by the runtime download) |
+| Ready to use, repeat visit (cached) | ~1.6 s |
+| Inference, WebGPU | ~60–170 ms (warm; varies between runs) |
 | Inference, WASM single-thread | ~1.2 s (measured in a worker) |
 
 Phone numbers come with the benchmark milestone.
