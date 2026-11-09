@@ -152,7 +152,7 @@ export function drawStudio(
 }
 
 /** The untouched source frame, letterboxed, for the before/after toggle. */
-export function drawOriginal(ctx: CanvasRenderingContext2D, image: ImageBitmap, size = SCENE_SIZE) {
+export function drawOriginal(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, image: ImageBitmap, size = SCENE_SIZE) {
   const s = Math.min(size / image.width, size / image.height);
   ctx.fillStyle = '#111';
   ctx.fillRect(0, 0, size, size);

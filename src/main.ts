@@ -168,6 +168,7 @@ async function handleFiles(files: File[]) {
     readout.frames.textContent = `${frames.length}${result.dropped ? ` (${result.dropped} skipped)` : ''}`;
     const isSpin = frames.length > 1;
     playButton.hidden = frameCount.hidden = spinHint.hidden = embedButton.hidden = !isSpin;
+    $('embed-originals-option').hidden = !isSpin;
     embedPanel.hidden = true;
     stage.hidden = false;
     setOriginal(false);
@@ -224,7 +225,8 @@ const exportClip = () =>
 
 const exportEmbed = () =>
   runExport('The embed', async () => {
-    const blob = await makeEmbed(frames, options, (f) => setStatus(`Packing the spin… ${Math.round(f * 100)}%`));
+    const withOriginals = $<HTMLInputElement>('embed-originals').checked;
+    const blob = await makeEmbed(frames, options, (f) => setStatus(`Packing the spin… ${Math.round(f * 100)}%`), withOriginals);
     save(blob, 'studio-spin.html');
     embedCode.value = embedSnippet(EMBED_PLACEHOLDER_URL);
     embedPanel.hidden = false;
