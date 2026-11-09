@@ -1,16 +1,17 @@
 // Source frames → studio frames: cut out, measure, colour-match, crop and place every frame.
 import { alphaToMaskRgba } from './tensor';
 import { applyGains, channelGains, objectMean, type RGB } from './color';
-import { placeFrames, robustBox, smoothBoxes, type Box } from './stabilize';
+import { axisBands, cameraMoved, placeFrames, robustBox, smoothBoxes, type Box } from './stabilize';
 import { makeShadow, SCENE_SIZE, type StudioFrame } from './scene';
 import type { Mask } from './worker-client';
 
 const CROP_MARGIN = 0.02; // padding around the object box, as a fraction of the frame
 const SMOOTH_RADIUS = 2; // frames on each side used to steady the object box (height, base)
-// The horizontal anchor gets a much wider window: re-centring every frame on a noisy anchor added
-// jitter on the test walkaround (3.8% vs 3.1% of object height per frame), while this only removes
-// slow aim drift and left jitter at the raw level (3.2%).
-const ANCHOR_RADIUS = 6;
+// Horizontal anchor. Handheld (the camera moved): centre every frame on the object's axis, which cut
+// sideways jitter at both its top and base from 1.38% to 0.23% (bottle photos) and 3.37% to 0.10%
+// (walkaround) of object height per frame. Camera still (turntable): there's no motion to remove and
+// per-frame centring only adds noise (0.18% → 2.8%), so only slow drift is corrected, over 13 frames.
+const STILL_ANCHOR_RADIUS = 6;
 const MIN_FRAMES_FOR_FULL_TURN = 8; // fewer views than this probably isn't a full rotation, so don't wrap
 
 export interface BuildResult {
@@ -25,6 +26,8 @@ interface Measured {
   crop: { x: number; y: number; w: number; h: number };
   pixels: ImageData;
   mean: RGB;
+  top: number; // centre of the object's top band, fraction of frame width
+  axis: number; // the object's vertical axis, fraction of frame width
 }
 
 const work = new OffscreenCanvas(1, 1);
@@ -52,7 +55,7 @@ function measure(original: ImageBitmap, mask: Mask): Measured | null {
   const crop = { x, y, w: Math.min(W, Math.ceil((box.x1 + CROP_MARGIN) * W)) - x, h: Math.min(H, Math.ceil((box.y1 + CROP_MARGIN) * H)) - y };
   const pixels = ctx.getImageData(crop.x, crop.y, crop.w, crop.h);
   const mean = objectMean(pixels.data);
-  return mean ? { original, box, crop, pixels, mean } : null;
+  return mean ? { original, box, crop, pixels, mean, ...axisBands(mask.alpha, mask.size, box) } : null;
 }
 
 export async function buildFrames(
@@ -76,8 +79,10 @@ export async function buildFrames(
   const gains = channelGains(measured.map((m) => m.mean));
   const fullTurn = measured.length >= MIN_FRAMES_FOR_FULL_TURN;
   const raw = measured.map((m) => m.box);
-  const anchors = smoothBoxes(raw, ANCHOR_RADIUS, fullTurn);
-  const boxes = smoothBoxes(raw, SMOOTH_RADIUS, fullTurn).map((b, i) => ({ ...b, cx: anchors[i].cx }));
+  const aspect = measured.length ? measured[0].original.width / measured[0].original.height : 1;
+  const handheld = cameraMoved(measured.map((m) => m.top), raw.map((b) => b.y1 - b.y0), aspect);
+  const anchors = handheld ? measured.map((m) => m.axis) : smoothBoxes(raw, STILL_ANCHOR_RADIUS, fullTurn).map((b) => b.cx);
+  const boxes = smoothBoxes(raw, SMOOTH_RADIUS, fullTurn).map((b, i) => ({ ...b, cx: anchors[i] }));
   const placements = placeFrames(boxes, measured.map((m) => ({ w: m.original.width, h: m.original.height })), SCENE_SIZE);
 
   const frames: StudioFrame[] = [];

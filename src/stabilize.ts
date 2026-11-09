@@ -27,6 +27,47 @@ export const LAYOUT = {
 } as const;
 
 const MIN_MASS = 0.002; // below 0.2% of the mask, treat the frame as "no object found"
+const TOP_BAND: [number, number] = [0, 0.12]; // top and bottom bands of the object, as fractions of its height:
+const BOTTOM_BAND: [number, number] = [0.85, 0.97]; // usually clear of handles and spouts, which sit mid-height
+/** Below this median frame-to-frame shift of the object's top (% of its height), the camera was still. */
+export const STILL_CAMERA_JITTER = 0.5;
+
+/** Centre (fraction of frame width) of the opaque pixels in a horizontal band of the object, or null if empty. */
+export function bandCenter(alpha: Uint8ClampedArray, size: number, box: Box, from: number, to: number, threshold = 128): number | null {
+  const h = box.y1 - box.y0;
+  const y0 = Math.max(0, Math.floor((box.y0 + from * h) * size));
+  const y1 = Math.min(size - 1, Math.floor((box.y0 + to * h) * size));
+  let sum = 0;
+  let n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = 0; x < size; x++) {
+      if (alpha[y * size + x] >= threshold) {
+        sum += x;
+        n++;
+      }
+    }
+  }
+  return n ? (sum / n + 0.5) / size : null;
+}
+
+/** The object's vertical axis: midway between its top-band and bottom-band centres (falls back to box.cx). */
+export function axisBands(alpha: Uint8ClampedArray, size: number, box: Box): { top: number; axis: number } {
+  const top = bandCenter(alpha, size, box, ...TOP_BAND) ?? box.cx;
+  const bottom = bandCenter(alpha, size, box, ...BOTTOM_BAND) ?? box.cx;
+  return { top, axis: (top + bottom) / 2 };
+}
+
+/**
+ * Did the camera move between frames (handheld photos or a walkaround) or stay put (turntable)?
+ * Judged by the median frame-to-frame sideways shift of the object's top, in % of the object's height.
+ * `tops` are fractions of frame width, `heights` fractions of frame height, `aspect` = frame width / height.
+ */
+export function cameraMoved(tops: readonly number[], heights: readonly number[], aspect: number): boolean {
+  if (tops.length < 3) return false;
+  const shifts = tops.slice(1).map((t, i) => (Math.abs(t - tops[i]) * aspect * 100) / Math.max(1e-6, heights[i]));
+  const sorted = [...shifts].sort((a, b) => a - b);
+  return sorted[sorted.length >> 1] > STILL_CAMERA_JITTER;
+}
 
 function trimIndex(counts: Float64Array, mass: number, fromEnd: boolean): number {
   let sum = 0;

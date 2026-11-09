@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { LAYOUT, placeFrames, robustBox, smoothBoxes, type Box } from './stabilize';
+import { axisBands, bandCenter, cameraMoved, LAYOUT, placeFrames, robustBox, smoothBoxes, type Box } from './stabilize';
 
 function maskWithRect(size: number, x0: number, y0: number, x1: number, y1: number): Uint8ClampedArray {
   const a = new Uint8ClampedArray(size * size);
@@ -101,5 +101,39 @@ describe('placeFrames', () => {
     const [p] = placeFrames([{ x0: 0.1, y0: 0.4, x1: 0.9, y1: 0.6, cx: 0.2 }], [{ w: 1000, h: 1000 }], 1000);
     const right = 0.9 * 1000 * p.scale + p.dx;
     expect(right).toBeLessThanOrEqual(1000 * (0.5 + LAYOUT.maxWidth / 2) + 1e-6);
+  });
+});
+
+describe('axisBands', () => {
+  test('finds the axis of a mug-like shape, ignoring a handle at mid-height', () => {
+    const size = 100;
+    const a = maskWithRect(size, 30, 20, 60, 80); // body, centred on x = 45
+    for (let y = 40; y < 60; y++) for (let x = 60; x < 75; x++) a[y * size + x] = 255; // handle on the right
+    const box = robustBox(a, size)!;
+    const { top, axis } = axisBands(a, size, box);
+    expect(top).toBeCloseTo(0.45, 2);
+    expect(axis).toBeCloseTo(0.45, 2);
+    expect(box.cx).toBeGreaterThan(0.46); // the median column is pulled toward the handle
+  });
+
+  test('bandCenter returns null for an empty band', () => {
+    const a = maskWithRect(100, 30, 50, 60, 80);
+    expect(bandCenter(a, 100, { x0: 0.3, y0: 0.2, x1: 0.6, y1: 0.8, cx: 0.45 }, 0, 0.1)).toBeNull();
+  });
+});
+
+describe('cameraMoved', () => {
+  test('a still camera (turntable) is detected as still', () => {
+    const tops = Array.from({ length: 36 }, (_, i) => 0.5 + 0.0003 * Math.sin(i)); // sub-pixel noise
+    expect(cameraMoved(tops, tops.map(() => 0.6), 9 / 16)).toBe(false);
+  });
+
+  test('handheld frames that shift by about 1.5% of the object height are detected as moved', () => {
+    const tops = Array.from({ length: 36 }, (_, i) => 0.5 + (i % 2 ? 0.006 : -0.006));
+    expect(cameraMoved(tops, tops.map(() => 0.5), 3 / 4)).toBe(true);
+  });
+
+  test('too few frames to tell', () => {
+    expect(cameraMoved([0.4, 0.6], [0.5, 0.5], 1)).toBe(false);
   });
 });

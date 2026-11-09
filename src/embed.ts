@@ -3,6 +3,7 @@ import { drawOriginal, drawStudio, renderBackdrop, SCENE_SIZE, type SceneOptions
 
 export const EMBED_SIZE = 800; // sharp at the usual 400–600 px embed size, even on 2× screens
 const FULL_TURN_MS = 6000;
+const HOLD = 0.6; // same timing as the 9:16 clip
 const DATA_URI = /^data:image\/(webp|jpeg);base64,[A-Za-z0-9+/]+=*$/;
 const CSS_COLOR = /^rgb\(\d{1,3} \d{1,3} \d{1,3}\)$/;
 
@@ -74,12 +75,17 @@ ${controls ? `<nav aria-label="Viewer controls">${controls}</nav>` : ''}
 const playBtn=document.getElementById('play'),views=[...document.querySelectorAll('[data-view]')];
 const load=list=>list.map(s=>{const i=new Image();i.src=s;return i});
 const studio=load(F);let orig=null;
-let set=studio,i=0,last=0,drag=null,play=n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
-const show=k=>{i=((k%n)+n)%n;if(!set[i].complete)return;x.drawImage(set[i],0,0,c.width,c.height);
-c.setAttribute('aria-valuenow',i+1);c.setAttribute('aria-valuetext','Frame '+(i+1)+' of '+n)};
+let set=studio,i=0,pos=0,prevT=0,drag=null,play=n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const label=k=>{c.setAttribute('aria-valuenow',k+1);c.setAttribute('aria-valuetext','Frame '+(k+1)+' of '+n)};
+const render=(a,fade)=>{const b=(a+1)%n;x.globalAlpha=1;x.drawImage(set[a],0,0,c.width,c.height);
+if(fade>.01&&set[b].complete){x.globalAlpha=fade;x.drawImage(set[b],0,0,c.width,c.height);x.globalAlpha=1}};
+const show=k=>{i=((k%n)+n)%n;pos=i;if(!set[i].complete)return;render(i,0);label(i)};
 const setPlay=on=>{play=on&&n>1;if(playBtn){playBtn.textContent=play?'Pause':'Play';playBtn.setAttribute('aria-pressed',play)}};
 const stop=()=>{setPlay(false);hint.style.opacity=0};
-const tick=t=>{if(play&&t-last>${FULL_TURN_MS}/n){last=t;show(i+1)}requestAnimationFrame(tick)};
+// Autoplay holds each view for ${HOLD * 100}% of its slot and crossfades into the next for the rest:
+// smooth motion that hides small uneven steps between hand-turned photos, without double images.
+const tick=t=>{if(play&&prevT){pos=(pos+(t-prevT)*n/${FULL_TURN_MS})%n;const a=Math.floor(pos);
+if(a!==i){i=a;label(a)}if(set[a].complete)render(a,Math.max(0,(pos-a-${HOLD})/${1 - HOLD}))}prevT=t;requestAnimationFrame(tick)};
 setPlay(play);
 studio[0].decode().then(()=>show(0));
 Promise.all(studio.map(im=>im.decode())).then(()=>requestAnimationFrame(tick));

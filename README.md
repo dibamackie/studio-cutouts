@@ -50,12 +50,20 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 | 36 frames over the whole video (before) | 1.84, and the spin turns 1.5 times per loop |
 | 36 frames over the detected turn | **0.86** |
 
-**360° spin**, from the 5-second sample walkaround: 108 candidate frames scored, 36 kept, all cut out and placed in about **3 s**. Frame-to-frame wobble, in % of object height:
+**360° spin**, from the 5-second sample walkaround: 108 candidate frames scored, 36 kept, all cut out and placed in about **3 s**. Frame-to-frame wobble, in % of object height (mean):
 
 | | Base height jumps | Size jumps | Sideways jumps |
 |---|---|---|---|
-| Raw video | 1.53% mean, 6.60% max | 2.77% mean, 7.85% max | 3.14% mean, 7.87% max |
-| Studio spin | **0.35%** mean, 1.36% max | **0.59%** mean, 2.59% max | 3.19% mean, 7.78% max |
+| Raw video | 1.53% | 2.77% | 3.32% |
+| Studio spin | **0.35%** | **0.59%** | **0.10%** |
+
+Sideways jitter for every capture, measured on the bottom band of the object (which the stabilizer doesn't use as its reference):
+
+| Capture | Camera detected as | Raw | Studio spin |
+|---|---|---|---|
+| Walkaround (handheld video) | moving | 3.32% | **0.10%** |
+| [Real-phone bottle photos](#from-a-real-phone) | moving | 1.20% | **0.23%** |
+| Turntable (phone still) | still | — | 0.18% at the top, left as filmed |
 
 **Exports** from the same spin:
 
@@ -64,7 +72,7 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 | 9:16 clip, 1080×1920, 8 s (two turns), H.264 MP4 | 1.2 s, faster than real time | 1.4 MB ([`docs/mug-clip.mp4`](docs/mug-clip.mp4)) |
 | Embeddable spin, 36 frames at 800 px | 1.4 s | 0.39 MB, one HTML file ([live](https://studio-cutouts.vercel.app/embed/mug-spin.html)) |
 
-The embed needs no server, script tag or third-party request. It has a Play/Pause button (autoplaying motion needs a way to stop it) and, if you tick "Include original photos" when exporting, a Studio | Original switch. The originals load only when someone picks Original. Upload the file anywhere and paste:
+The embed needs no server, script tag or third-party request. Its autoplay crossfades between frames like the clip does, which hides small uneven steps in hand-turned photos. It has a Play/Pause button (autoplaying motion needs a way to stop it) and, if you tick "Include original photos" when exporting, a Studio | Original switch. The originals load only when someone picks Original. Upload the file anywhere and paste:
 
 ```html
 <iframe src="https://your-site.example/studio-spin.html" width="600" height="600"
@@ -132,10 +140,13 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
   - **Fix:** keep just those 8 `ReduceMean` operations in fp32 (`FP32_OPS` in `training/studio_train/export.py`). The file is the same 9.1 MB, scores the same on DIS-TE (0.7735), and now agrees with the CPU on all 23 (mean IoU 0.99).
   - **Shipping:** the model is now `studio-v1.1.fp16.onnx`, so returning visitors don't keep the cached broken file.
 - **WebGPU isn't always faster.** On an Android 10 phone with an Imagination D-Series GPU, Studio v1 took 510 ms per frame on WebGPU and 183 ms on one CPU thread. The first version always chose WebGPU, which made that phone about 3× slower. Hence the first-visit probe, confirmed on the same phone afterwards.
-- **Don't re-center what the camera already centered.**
+- **Re-center only if the camera moved; I got this wrong first.**
   - **Centering on the bounding box** made the mug jump sideways as its handle swung into view.
-  - **Centering on the median column of the object's pixels** was better. But measured against the handle-free rim, it still added jitter (3.8% vs the raw 3.1% of object height per frame).
-  - **The spin now corrects only slow aim drift**, using a 13-frame median. Base and size are normalized every frame; that's where the 4–5× gains come from.
+  - **Centering on the median column of the object's pixels, smoothed over 5 frames,** lagged behind the swinging handle and added jitter. So the first version corrected only slow drift.
+  - **The real-phone showcase showed what that cost:** the bottle still shifted 1.38% of its height per photo.
+  - **Measured on a part of the object the anchor doesn't use,** centering *every* frame (unsmoothed) on the object's axis wins clearly: the axis is the midpoint of its top-band and bottom-band centers, which skips mid-height handles. Bottle photos went to 0.23%, the walkaround to 0.10%.
+  - **On a still turntable** the same rule only adds noise (0.18% → 2.8%), because there's no camera motion to remove.
+  - **So the stabilizer now checks** how far the object's top shifts between frames (median above 0.5% of its height means handheld) and picks the anchor accordingly.
 - **BiRefNet's ONNX export ran at about one image per minute** on CUDA, because `deform_conv2d` has no native ONNX operator. It was scored with its original PyTorch code instead (pinned, reviewed revision): about 130 ms per image.
 - **Multithreaded WASM hangs inside a Web Worker** (ONNX Runtime Web 1.31.1), so the worker uses one thread. The upside: the site needs no cross-origin isolation headers, which keeps static hosting and embedding simple.
 
@@ -153,7 +164,7 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
 ```bash
 npm install
 npm run dev      # http://localhost:5173 (benchmarks at /bench.html)
-npm test         # 66 unit tests: tensors, stabilization, loop detection, colour, sharpness, clip timing, embed safety
+npm test         # 73 unit tests: tensors, stabilization, loop detection, colour, sharpness, clip timing, embed safety
 npm run build    # static site in dist/, deployable to Vercel or any static host
 ```
 

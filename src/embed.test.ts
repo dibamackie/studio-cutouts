@@ -65,3 +65,44 @@ test('embedSnippet points the iframe at the hosted file', () => {
   expect(code).toContain('loading="lazy"');
   expect(code).toContain('title="360° product view"');
 });
+
+describe('embedded viewer autoplay (script run against a fake canvas and clock)', () => {
+  function runViewer(frameCount: number) {
+    const frames = Array.from({ length: frameCount }, (_, i) => `data:image/webp;base64,${btoa(`frame-${i}`)}`);
+    const html = buildEmbedHtml(frames, 'rgb(0 0 0)');
+    const draws: { src: string; alpha: number }[] = [];
+    const ctx = { globalAlpha: 1, drawImage(img: { src: string }) { draws.push({ src: img.src, alpha: this.globalAlpha }); } };
+    const attrs: Record<string, string> = {};
+    const canvas = { width: 800, height: 800, clientWidth: 400, style: {}, getContext: () => ctx, setAttribute: (k: string, v: unknown) => (attrs[k] = String(v)) };
+    const doc = {
+      querySelector: (sel: string) => (sel === 'canvas' ? canvas : { style: {} }),
+      getElementById: () => ({ textContent: '', setAttribute() {} }),
+      querySelectorAll: () => [],
+    };
+    class FakeImage { src = ''; complete = true; decode() { return Promise.resolve(); } }
+    const frameCallbacks: ((t: number) => void)[] = [];
+    const raf = (cb: (t: number) => void) => frameCallbacks.push(cb);
+    new Function('document', 'Image', 'requestAnimationFrame', 'matchMedia', 'self', scriptsOf(html).join(';\n'))(
+      doc, FakeImage, raf, () => ({ matches: false }), {},
+    );
+    const advance = (t: number) => frameCallbacks.shift()?.(t);
+    return { frames, draws, attrs, advance };
+  }
+
+  test('holds each view, then crossfades into the next, at one turn per 6 s', async () => {
+    const v = runViewer(36);
+    await new Promise((r) => setTimeout(r, 0)); // let decode() promises settle and autoplay start
+    const slot = 6000 / 36;
+    v.advance(1000); // first tick only records the time
+    v.draws.length = 0;
+    v.advance(1000 + 0.5 * slot); // halfway through frame 1's slot: still holding, no blend
+    expect(v.draws.map((d) => d.alpha)).toEqual([1]);
+    v.draws.length = 0;
+    v.advance(1000 + 0.8 * slot); // 80% through: blending frame 2 in at (0.8 - 0.6) / 0.4 = 0.5
+    expect(v.draws[0]).toMatchObject({ src: v.frames[0], alpha: 1 });
+    expect(v.draws[1].src).toBe(v.frames[1]);
+    expect(v.draws[1].alpha).toBeCloseTo(0.5, 2);
+    v.advance(1000 + 1.1 * slot); // into the next slot
+    expect(v.attrs['aria-valuenow']).toBe('2');
+  });
+});
