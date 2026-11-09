@@ -1,0 +1,122 @@
+/* Direction: a photo studio's seamless paper sweep — warm paper, ink, one signal color, mono telemetry. */
+:root {
+  --paper: oklch(96.5% 0.012 85);
+  --paper-deep: oklch(91% 0.016 80);
+  --ink: oklch(22% 0.02 60);
+  --ink-soft: oklch(45% 0.02 60);
+  --signal: oklch(62% 0.19 35);
+  --signal-ink: oklch(99% 0.005 85);
+  --line: oklch(82% 0.02 75);
+  --check: oklch(88% 0.01 80);
+
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: oklch(19% 0.012 60);
+    --paper-deep: oklch(24% 0.014 60);
+    --ink: oklch(94% 0.012 85);
+    --ink-soft: oklch(72% 0.015 80);
+    --line: oklch(35% 0.015 60);
+    --check: oklch(28% 0.01 60);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: radial-gradient(120% 80% at 50% 0%, var(--paper) 40%, var(--paper-deep));
+  color: var(--ink);
+  font: 400 1rem/1.5 var(--font-body);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.masthead { padding: var(--gutter) var(--gutter) 0; max-width: 72rem; margin: 0 auto; width: 100%; }
+.wordmark { font: 500 0.85rem var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; margin: 0; }
+.wordmark span { color: var(--signal); }
+h1 {
+  font: 400 clamp(2.4rem, 1.2rem + 5vw, 5.2rem) / 0.95 var(--font-display);
+  letter-spacing: -0.02em;
+  margin: 0.6em 0 0;
+  max-width: 14ch;
+}
+h1 em { color: var(--signal); }
+
+main { width: 100%; max-width: 72rem; margin: 0 auto; padding: clamp(1.5rem, 4vw, 3rem) var(--gutter); }
+
+.drop {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  min-height: 16rem;
+  border: 1.5px dashed var(--line);
+  border-radius: 2px 2px 40% 40% / 2px 2px 12% 12%; /* the curve of a paper sweep */
+  cursor: pointer;
+  text-align: center;
+  padding: 2rem;
+  transition: border-color 200ms var(--ease-out), background-color 200ms var(--ease-out), min-height 400ms var(--ease-out);
+}
+.drop:hover, .drop.over { border-color: var(--signal); background: color-mix(in oklch, var(--signal) 6%, transparent); }
+.drop:focus-within { outline: 2px solid var(--signal); outline-offset: 4px; }
+.drop.compact { min-height: 5rem; }
+.drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.drop-title { font: 400 1.8rem var(--font-display); }
+.drop-hint { color: var(--ink-soft); font-size: 0.9rem; }
+
+.status { font: 400 0.85rem var(--font-mono); color: var(--ink-soft); min-height: 1.5em; margin: 1rem 0; }
+
+.stage { display: grid; gap: 1rem; animation: rise 500ms var(--ease-out); }
+.sweep {
+  display: grid;
+  place-items: center;
+  padding: clamp(0.5rem, 2vw, 1.5rem);
+  background: repeating-conic-gradient(var(--check) 0 25%, transparent 0 50%) 0 0 / 20px 20px;
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 60px -30px oklch(20% 0.02 60 / 0.35);
+}
+.sweep canvas { max-width: 100%; max-height: 70dvh; height: auto; display: block; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+button {
+  font: 500 0.9rem var(--font-body);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 150ms var(--ease-out), background-color 150ms var(--ease-out);
+}
+button:hover { transform: translateY(-1px); }
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+button.primary { background: var(--signal); border-color: var(--signal); color: var(--signal-ink); }
+button.ghost { border-color: transparent; color: var(--ink-soft); }
+
+.telemetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  margin: 2rem 0 0;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.telemetry div { padding: 0.75rem 1rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.telemetry dt { font: 500 0.7rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.telemetry dd { font: 400 1rem var(--font-mono); margin: 0.2rem 0 0; }
+
+.colophon { padding: 1.5rem var(--gutter); color: var(--ink-soft); font-size: 0.8rem; text-align: center; }
+.colophon a { color: inherit; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

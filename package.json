@@ -1,0 +1,23 @@
+{
+  "name": "studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Product cutouts that never leave your device: in-browser background removal.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "onnxruntime-web": "^1.31.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

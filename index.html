@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Product cutouts that never leave your device: background removal running in the browser." />
+    <title>Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="masthead">
+      <p class="wordmark">Studio<span>.</span></p>
+      <h1>Product cutouts that <em>never leave</em> your device.</h1>
+    </header>
+
+    <main>
+      <label id="drop" class="drop" for="file">
+        <input id="file" type="file" accept="image/*" />
+        <span class="drop-title">Drop a product photo</span>
+        <span class="drop-hint">or click to choose · paste works too</span>
+      </label>
+
+      <p id="status" class="status" role="status" aria-live="polite">Loading model…</p>
+
+      <section id="stage" class="stage" hidden aria-label="Result">
+        <div class="sweep">
+          <canvas id="result" aria-label="Cutout result"></canvas>
+        </div>
+        <div class="actions">
+          <button id="toggle" type="button" aria-pressed="false">Show original</button>
+          <button id="download" type="button" class="primary">Download PNG</button>
+          <button id="reset" type="button" class="ghost">New photo</button>
+        </div>
+      </section>
+
+      <dl class="telemetry" aria-label="Run details">
+        <div><dt>Model</dt><dd>U²-Netp · 4.4 MB</dd></div>
+        <div><dt>Backend</dt><dd id="m-backend">…</dd></div>
+        <div><dt>Load</dt><dd id="m-load">…</dd></div>
+        <div><dt>Inference</dt><dd id="m-infer">—</dd></div>
+        <div><dt>Image</dt><dd id="m-size">—</dd></div>
+      </dl>
+    </main>
+
+    <footer class="colophon">
+      Baseline model: <a href="https://github.com/xuebinqin/U-2-Net">U²-Netp</a> (Apache-2.0), via
+      <a href="https://github.com/danielgatis/rembg">rembg</a>. Inference: ONNX Runtime Web. No uploads.
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
