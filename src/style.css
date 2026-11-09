@@ -203,3 +203,19 @@ button.link:hover { transform: none; text-decoration-thickness: 2px; }
   .keys-hint { display: none; } /* touchscreens have no arrow keys */
 }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.embed-panel { display: grid; gap: 0.75rem; padding: 1.25rem; border: 1px solid var(--line); margin-top: 0.5rem; }
+.embed-panel h2 { font-size: clamp(1.3rem, 1rem + 1vw, 1.7rem); margin: 0; }
+.embed-panel p { margin: 0; color: var(--ink-soft); max-width: 70ch; }
+.embed-panel a { color: var(--signal); }
+.embed-panel code { font-family: var(--font-mono); font-size: 0.9em; color: var(--ink); }
+.embed-panel textarea {
+  width: 100%;
+  font: 400 0.8rem/1.5 var(--font-mono);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+  resize: vertical;
+}
+.embed-panel button { justify-self: start; }

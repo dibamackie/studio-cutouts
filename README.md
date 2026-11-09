@@ -4,7 +4,7 @@
 
 Product photos that never leave your device. Drop in a product photo, several photos, or a short phone video walking around the object. The browser cuts it out with a neural network I trained (running on your GPU via WebGPU, or your CPU via WebAssembly), stands it in a studio scene with a contact shadow and floor reflection, and, for several frames, turns it into a drag-to-spin 360° view. Nothing is uploaded.
 
-> **Status: milestone 4 of 6.** Studio scene and 360° spin are live; try the sample spin on the home page. Next: a 9:16 clip for social media and an embed snippet. See [Roadmap](#roadmap).
+> **Status: milestone 5 of 6.** Studio scene, 360° spin, a 9:16 social clip and an embeddable spin are live; try the sample spin on the home page, or see the [sample embed](https://studio-cutouts.vercel.app/embed/mug-spin.html). Next: demo GIF and a failure gallery. See [Roadmap](#roadmap).
 
 ## Results
 
@@ -39,6 +39,24 @@ On the desktop GPU, Studio v1 is about 3× faster than U²-Netp despite a 2.6× 
 
 The base and size settle 4–5×. Sideways is left as filmed on purpose; see the engineering notes.
 
+**Exports**, from the same sample spin (desktop Chrome):
+
+| Export | Time | Size |
+|---|---|---|
+| 9:16 clip, 1080×1920, 8 s (two turns), H.264 MP4 | 1.2 s, encoded faster than real time | 1.4 MB ([`docs/mug-clip.mp4`](docs/mug-clip.mp4)) |
+| Embeddable spin, 36 frames at 800 px | 1.4 s | 0.39 MB, one HTML file ([live](https://studio-cutouts.vercel.app/embed/mug-spin.html)) |
+
+The clip holds each view for 60% of its slot and crossfades in the rest: blending the full slot made the mug's handle appear twice. In the tall frame the object is enlarged as far as its widest view allows, up to 1.3×.
+
+The embeddable spin needs no server, script tag or third-party request. Upload the file anywhere and paste:
+
+```html
+<iframe src="https://your-site.example/studio-spin.html" width="600" height="600"
+  style="border:0;max-width:100%;height:auto;aspect-ratio:1" loading="lazy" title="360° product view"></iframe>
+```
+
+Because only base64 image data and a validated colour go into that file, nothing a user drops in can inject markup into a host page (`buildEmbedHtml` rejects anything else; see `src/embed.test.ts`).
+
 ## Run it
 
 ```bash
@@ -64,7 +82,9 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
               ▼
           scene/spin  backdrop + contact shadow + floor reflection + object; drag, arrow keys, autoplay
               ▼
-          exports     studio JPG (1080×1080) and transparent PNG cropped to the object
+          exports     studio JPG (1080×1080) · transparent PNG cropped to the object
+                      9:16 clip (1080×1920 MP4, WebCodecs via Mediabunny; real-time recording fallback)
+                      embeddable spin (one HTML file: frames as WebP data URIs + a 2 KB viewer)
 ```
 
 - **Inference runs in a Web Worker**, so the page never freezes.
@@ -90,7 +110,7 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
 2. ✅ Training pipeline and synthetic data generator; first trained model. See [training/README.md](training/README.md)
 3. ✅ Swap in my model; benchmark page with quality tables and an on-device speed test (phone numbers still to collect)
 4. ✅ Studio scene (4 backdrops, contact shadow, reflection, exposure matching) and 360° spin viewer from photos or video
-5. Social export (9:16 clip) and embed snippet
+5. ✅ Social export (9:16 clip) and an embeddable spin with an iframe snippet
 6. Deploy, demo GIF, failure gallery
 
 ## Credits and licenses
@@ -99,4 +119,5 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
 - Studio v1 weights: trained on DUTS and DIS5K, so they are for research and demo use only. See `NOTICE`.
 - Baseline model: [U²-Net / U²-Netp](https://github.com/xuebinqin/U-2-Net) by Xuebin Qin et al., Apache-2.0. ONNX export from [rembg](https://github.com/danielgatis/rembg).
 - Inference: [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), MIT.
+- Clip muxing: [Mediabunny](https://github.com/Vanilagy/mediabunny), MPL-2.0, unmodified.
 - Sample video: rendered for this project in Blender with [`tools/render_sample_mug.py`](tools/render_sample_mug.py); same license as the code.

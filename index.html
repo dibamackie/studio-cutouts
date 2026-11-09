@@ -56,11 +56,24 @@
           <label class="check"><input id="reflection" type="checkbox" checked /> Floor reflection</label>
         </fieldset>
 
-        <div class="actions">
+        <div class="actions" id="exports">
           <button id="download-jpg" type="button" class="primary">Download studio JPG</button>
           <button id="download" type="button">Download cutout PNG</button>
+          <button id="download-clip" type="button">Download 9:16 clip</button>
+          <button id="download-embed" type="button" hidden>Download embeddable spin</button>
           <button id="reset" type="button" class="ghost">Start over</button>
         </div>
+
+        <section id="embed-panel" class="embed-panel" hidden aria-labelledby="embed-h">
+          <h2 id="embed-h">Put the spin on your site</h2>
+          <p>
+            Upload <code>studio-spin.html</code> to any web host, then paste this where the spin should appear,
+            with the address changed to where you uploaded it. It works as a plain file too, no server code needed.
+            <a href="./embed/mug-spin.html" target="_blank" rel="noopener">See the sample spin as an embed</a>.
+          </p>
+          <textarea id="embed-code" rows="3" readonly aria-label="Embed code" spellcheck="false"></textarea>
+          <button id="copy-embed" type="button">Copy code</button>
+        </section>
       </section>
 
       <dl class="telemetry" aria-label="Run details">

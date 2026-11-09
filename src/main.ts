@@ -6,6 +6,8 @@ import { InputError, loadFrames } from './frames';
 import { buildFrames } from './pipeline';
 import { drawOriginal, drawStudio, renderBackdrop, SCENE_SIZE, type BackdropId, type SceneOptions, type StudioFrame } from './scene';
 import { createSpin } from './spin';
+import { makeClip } from './clip';
+import { embedSnippet, makeEmbed } from './embed';
 
 const requested = new URLSearchParams(location.search).get('model'); // ?model=u2netp compares against the baseline
 const model = MODELS[isModelId(requested) ? requested : DEFAULT_MODEL];
@@ -25,6 +27,10 @@ const spinHint = $<HTMLParagraphElement>('spin-hint');
 const toggle = $<HTMLButtonElement>('toggle');
 const customColor = $<HTMLInputElement>('custom-color');
 const reflection = $<HTMLInputElement>('reflection');
+const embedButton = $<HTMLButtonElement>('download-embed');
+const embedPanel = $<HTMLElement>('embed-panel');
+const embedCode = $<HTMLTextAreaElement>('embed-code');
+const EMBED_PLACEHOLDER_URL = 'https://your-site.example/studio-spin.html';
 const readout = { model: $('m-model'), backend: $('m-backend'), load: $('m-load'), infer: $('m-infer'), frames: $('m-frames'), size: $('m-size') };
 
 const setStatus = (text: string) => (status.textContent = text);
@@ -126,6 +132,10 @@ function setOriginal(on: boolean) {
 
 async function handleFiles(files: File[]) {
   if (files.length === 0) return;
+  if (exporting) {
+    setStatus('Wait for the export to finish, then drop the new files again.'); // the export is still reading these frames
+    return;
+  }
   const gen = ++generation;
   const cancelled = () => gen !== generation;
   busy = true;
@@ -157,7 +167,8 @@ async function handleFiles(files: File[]) {
     readout.infer.textContent = `${result.meanInferMs.toFixed(1)} ms/frame`;
     readout.frames.textContent = `${frames.length}${result.dropped ? ` (${result.dropped} skipped)` : ''}`;
     const isSpin = frames.length > 1;
-    playButton.hidden = frameCount.hidden = spinHint.hidden = !isSpin;
+    playButton.hidden = frameCount.hidden = spinHint.hidden = embedButton.hidden = !isSpin;
+    embedPanel.hidden = true;
     stage.hidden = false;
     setOriginal(false);
     spin.setCount(frames.length);
@@ -181,6 +192,43 @@ function save(blob: Blob, name: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+let exporting = false;
+const exportButtons = () => document.querySelectorAll<HTMLButtonElement>('#exports button');
+
+/** One export at a time; the buttons are disabled while it runs. */
+async function runExport(label: string, job: () => Promise<void>) {
+  if (exporting || frames.length === 0) return;
+  exporting = true;
+  spin.pause();
+  for (const b of exportButtons()) b.disabled = true;
+  try {
+    await job();
+  } catch (err) {
+    setStatus(`${label} failed: ${String(err)}`);
+    console.error(err);
+  } finally {
+    exporting = false;
+    for (const b of exportButtons()) b.disabled = false;
+  }
+}
+
+const exportClip = () =>
+  runExport('The clip', async () => {
+    const clip = await makeClip(frames, options, (f) => setStatus(`Encoding the 9:16 clip… ${Math.round(f * 100)}%`));
+    save(clip.blob, `studio-clip.${clip.extension}`);
+    const how = clip.encoder === 'mediarecorder' ? ', recorded in real time because this browser has no video encoder' : '';
+    setStatus(`Clip saved: ${(clip.blob.size / 1e6).toFixed(1)} MB ${clip.extension.toUpperCase()}${how}.`);
+  });
+
+const exportEmbed = () =>
+  runExport('The embed', async () => {
+    const blob = await makeEmbed(frames, options, (f) => setStatus(`Packing the spin… ${Math.round(f * 100)}%`));
+    save(blob, 'studio-spin.html');
+    embedCode.value = embedSnippet(EMBED_PLACEHOLDER_URL);
+    embedPanel.hidden = false;
+    setStatus(`Embeddable spin saved: ${(blob.size / 1e6).toFixed(1)} MB, one HTML file.`);
+  });
 
 async function exportFrame(kind: 'png' | 'jpg') {
   const frame = frames[spin.index];
@@ -253,7 +301,19 @@ toggle.addEventListener('click', () => setOriginal(!showingOriginal));
 playButton.addEventListener('click', () => (spin.playing ? spin.pause() : spin.play()));
 $('download').addEventListener('click', () => exportFrame('png'));
 $('download-jpg').addEventListener('click', () => exportFrame('jpg'));
+$('download-clip').addEventListener('click', exportClip);
+embedButton.addEventListener('click', exportEmbed);
+$('copy-embed').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(embedCode.value);
+    setStatus('Embed code copied.');
+  } catch {
+    embedCode.select(); // clipboard blocked: leave it selected for Ctrl+C
+    setStatus('Copying was blocked; the code is selected, press Ctrl+C (⌘C on a Mac).');
+  }
+});
 $('reset').addEventListener('click', () => {
+  if (exporting) return;
   generation++;
   busy = false;
   clearFrames();
