@@ -1,0 +1,26 @@
+{
+  "name": "studio-cutout",
+  "params": 4534553,
+  "opset": 17,
+  "input": "image",
+  "output": "mask",
+  "files": {
+    "fp32": {
+      "file": "studio-cutout.fp32.onnx",
+      "bytes": 18152930,
+      "sha256": "87f70f197c2f2471b92cea59913ed391de30cb706b7d26bbeaa13a48e3d87f8b",
+      "max_abs_diff_vs_torch": 3.039836883544922e-06
+    },
+    "fp16": {
+      "file": "studio-cutout.fp16.onnx",
+      "bytes": 9134388,
+      "sha256": "419124062a2fd6c5cf6916357beaf22e3c1323a8285075406ce3a31151308b62",
+      "max_abs_diff_vs_torch": 0.002570733428001404
+    }
+  },
+  "val": {
+    "mae": 0.04792723575234413,
+    "iou": 0.7596413336927457,
+    "max_f": 0.8665411328022499
+  }
+}

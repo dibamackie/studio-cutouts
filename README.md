@@ -4,7 +4,7 @@
 
 Product cutouts that never leave your device. Drop in a product photo and the browser removes the background with a neural network running on your GPU (WebGPU) or CPU (WebAssembly). Nothing is uploaded.
 
-> **Status: milestone 1 of 6.** The pipeline runs end to end with an off-the-shelf baseline model (U²-Netp). The next milestones replace it with a model I train myself, then add the studio scene, 360° spin viewer and social export. See [Roadmap](#roadmap).
+> **Status: milestone 2 of 6.** The live app still runs the off-the-shelf baseline (U²-Netp). My own model is trained (see [training/](training/README.md)) and gets swapped in next, then come the studio scene, 360° spin viewer and social export. See [Roadmap](#roadmap).
 
 ## Run it
 
@@ -55,7 +55,7 @@ Phone numbers come with the benchmark milestone.
 ## Roadmap
 
 1. ✅ Baseline: off-the-shelf U²-Netp running in the browser end to end
-2. Training pipeline and synthetic data generator; first trained model
+2. ✅ Training pipeline and synthetic data generator; first trained model. It matches U²-Netp on DUTS-TE, beats it by +0.13 max F on fine-detail DIS-VD, and runs in 13–15 ms on WebGPU. See [training/README.md](training/README.md#results-first-model-runsfirst)
 3. Swap in my model; benchmark page (quality, size, latency on desktop and phone)
 4. Studio scene (backdrops, contact shadow, reflection) and 360° spin viewer
 5. Social export (9:16 clip) and embed snippet

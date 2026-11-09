@@ -54,3 +54,36 @@ python -m studio_train.export --ckpt RUNS/first/best.pt --out ../public/models
 ```
 
 `export.py` writes fp32 and fp16 ONNX files plus a JSON model card, and fails if either file's output differs from PyTorch by more than the tolerance (1e-4 for fp32, 2e-2 for fp16) at 320 and 512 px.
+
+Score any ONNX model, including the U²-Netp baseline, at each test image's own resolution:
+
+```bash
+python -m studio_train.evaluate --model RUNS/first/onnx/studio-cutout.fp16.onnx --set PREPARED/dis-vd
+python -m studio_train.evaluate --model ../public/models/u2netp.onnx --preset u2netp --set PREPARED/dis-vd
+```
+
+## Results: first model (`runs/first`)
+
+Trained on DUTS-TR + DIS-TR + 6,000 fresh synthetic composites per epoch, 384 px, batch 16, 30 epochs, AdamW (lr 1e-3, cosine), on an RTX 3070: about 95 s per epoch, 55 minutes in total. The best checkpoint is from epoch 29. History: [`results/first-history.jsonl`](results/first-history.jsonl); model card: [`results/first-model-card.json`](results/first-model-card.json).
+
+Scored at full resolution (images prepared to 640 px max side), fp16 ONNX:
+
+| Model | Size | DUTS-TE max F | IoU | MAE | DIS-VD max F | IoU | MAE | CPU ms/img |
+|---|---|---|---|---|---|---|---|---|
+| U²-Netp @320 (baseline) | 4.6 MB | 0.866 | 0.750 | 0.051 | 0.630 | 0.393 | 0.146 | 195 |
+| **Studio v1 @384** | 9.1 MB | **0.866** | **0.761** | **0.048** | **0.759** | **0.606** | **0.094** | **23** |
+
+- **DUTS-TE** is 1,000 fixed random images. They were also the validation set used to pick the best epoch, so this column is slightly optimistic for my model. U²-Netp was trained on DUTS, so this is its home ground.
+- **DIS-VD** (470 images with fine detail) was not used for training or model selection, so it's the clean comparison: +0.13 max F and +0.21 IoU over the baseline.
+- **CPU ms/img** is ONNX Runtime on a desktop CPU (Python), for relative comparison only.
+
+In the browser (desktop Chrome, ONNX Runtime Web 1.31.1, fp16 model):
+
+| Backend | 320 px | 384 px | 512 px |
+|---|---|---|---|
+| WebGPU (warm) | — | 13–15 ms | 19 ms |
+| WASM, 1 thread | 140 ms | 196 ms | 346 ms |
+
+The first run at each new input size recompiles GPU shaders (120–830 ms), so the app should stick to one size per session.
+
+Full DUTS-TE and DIS-TE results, phone timings and the BiRefNet comparison come with milestone 3.
