@@ -21,9 +21,10 @@ Speed, median ms per frame, measured with the [benchmark page](https://studio-cu
 
 | Device | Studio v1 WebGPU | Studio v1 WASM | U²-Netp WebGPU | U²-Netp WASM |
 |---|---|---|---|---|
+| Desktop, Chrome, RTX 3070 | **14 @512** | 229 @384 | 40 @320 | 1,422 @320 |
 | Android 10 phone, Chrome, Imagination D-Series GPU | 510 @512 | **183 @384** | 1,595 @320 | 1,306 @320 |
 
-In a standalone test in desktop Chrome (RTX 3070), Studio v1 took 13–19 ms per frame on WebGPU and about 200 ms on the single-thread CPU.
+On the desktop GPU, Studio v1 is about 3× faster than U²-Netp despite a 2.6× larger input, and on the CPU about 6× faster on both devices.
 
 ## Run it
 

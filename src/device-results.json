@@ -1,13 +1,96 @@
 [
   {
+    "label": "Desktop, RTX 3070 (Chrome)",
+    "device": "Windows NT 10.0; Win64; x64 · GPU: nvidia ampere",
+    "date": "2026-11-09T07:33:14.435Z",
+    "results": [
+      {
+        "modelId": "studio-v1",
+        "backend": "webgpu",
+        "inputSize": 512,
+        "createMs": 3892.10000000149,
+        "firstMs": 655.7000000029802,
+        "medianMs": 14,
+        "p90Ms": 16.299999997019768,
+        "runs": 20
+      },
+      {
+        "modelId": "studio-v1",
+        "backend": "wasm",
+        "inputSize": 384,
+        "createMs": 149.89999999850988,
+        "firstMs": 258.30000000447035,
+        "medianMs": 228.70000000298023,
+        "p90Ms": 243.79999999701977,
+        "runs": 5
+      },
+      {
+        "modelId": "u2netp",
+        "backend": "webgpu",
+        "inputSize": 320,
+        "createMs": 254,
+        "firstMs": 443.6000000014901,
+        "medianMs": 39.79999999701977,
+        "p90Ms": 46,
+        "runs": 20
+      },
+      {
+        "modelId": "u2netp",
+        "backend": "wasm",
+        "inputSize": 320,
+        "createMs": 91.70000000298023,
+        "firstMs": 1403.6000000014901,
+        "medianMs": 1422.4000000059605,
+        "p90Ms": 1582.5,
+        "runs": 5
+      }
+    ]
+  },
+  {
     "label": "Android 10 phone (Chrome)",
     "device": "Linux; Android 10; K · GPU: img-tec d-series",
     "date": "2026-11-09T05:04:39.822Z",
     "results": [
-      { "modelId": "studio-v1", "backend": "webgpu", "inputSize": 512, "createMs": 2304.2000000178814, "firstMs": 2492.5999999940395, "medianMs": 510.2000000178814, "p90Ms": 525.5999999940395, "runs": 20 },
-      { "modelId": "studio-v1", "backend": "wasm", "inputSize": 384, "createMs": 174.40000000596046, "firstMs": 222.80000001192093, "medianMs": 183.30000001192093, "p90Ms": 188.40000000596046, "runs": 5 },
-      { "modelId": "u2netp", "backend": "webgpu", "inputSize": 320, "createMs": 345.19999998807907, "firstMs": 2089.800000011921, "medianMs": 1594.7999999821186, "p90Ms": 1613.4000000059605, "runs": 20 },
-      { "modelId": "u2netp", "backend": "wasm", "inputSize": 320, "createMs": 102.89999997615814, "firstMs": 1372, "medianMs": 1305.7000000178814, "p90Ms": 1373.1000000238419, "runs": 5 }
+      {
+        "modelId": "studio-v1",
+        "backend": "webgpu",
+        "inputSize": 512,
+        "createMs": 2304.2000000178814,
+        "firstMs": 2492.5999999940395,
+        "medianMs": 510.2000000178814,
+        "p90Ms": 525.5999999940395,
+        "runs": 20
+      },
+      {
+        "modelId": "studio-v1",
+        "backend": "wasm",
+        "inputSize": 384,
+        "createMs": 174.40000000596046,
+        "firstMs": 222.80000001192093,
+        "medianMs": 183.30000001192093,
+        "p90Ms": 188.40000000596046,
+        "runs": 5
+      },
+      {
+        "modelId": "u2netp",
+        "backend": "webgpu",
+        "inputSize": 320,
+        "createMs": 345.19999998807907,
+        "firstMs": 2089.800000011921,
+        "medianMs": 1594.7999999821186,
+        "p90Ms": 1613.4000000059605,
+        "runs": 20
+      },
+      {
+        "modelId": "u2netp",
+        "backend": "wasm",
+        "inputSize": 320,
+        "createMs": 102.89999997615814,
+        "firstMs": 1372,
+        "medianMs": 1305.7000000178814,
+        "p90Ms": 1373.1000000238419,
+        "runs": 5
+      }
     ]
   }
 ]
