@@ -219,3 +219,9 @@ button.link:hover { transform: none; text-decoration-thickness: 2px; }
   resize: vertical;
 }
 .embed-panel button { justify-self: start; }
+
+.shoot-tips { margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--ink-soft); max-width: 70ch; }
+.shoot-tips summary { cursor: pointer; color: var(--ink); font-weight: 500; width: fit-content; }
+.shoot-tips summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.shoot-tips ol { margin: 0.5rem 0 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; }
+.shoot-tips strong { color: var(--ink); font-weight: 600; }

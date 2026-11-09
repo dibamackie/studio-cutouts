@@ -1,5 +1,6 @@
 // Turn dropped files into source frames: one photo, several photos, or frames sampled from a video.
 import { pickSharpest, sharpness, toGray } from './sharpness';
+import { centerDistance, findLoopEnd } from './loop';
 
 export const SPIN_FRAMES = 36; // 10° per frame for a full turn
 export const MAX_PHOTOS = 72;
@@ -54,7 +55,11 @@ async function seek(video: HTMLVideoElement, t: number) {
   await seeked;
 }
 
-async function framesFromVideo(file: File, onProgress: (text: string) => void, check: () => void): Promise<ImageBitmap[]> {
+async function framesFromVideo(
+  file: File,
+  onProgress: (text: string) => void,
+  check: () => void,
+): Promise<{ frames: ImageBitmap[]; turnSeconds: number | null }> {
   const url = URL.createObjectURL(file);
   const video = document.createElement('video');
   video.muted = true;
@@ -77,25 +82,36 @@ async function framesFromVideo(file: File, onProgress: (text: string) => void, c
     const sh = Math.max(3, Math.round((SCORE_WIDTH * vh) / vw));
     const small = new OffscreenCanvas(sw, sh).getContext('2d', { willReadFrequently: true })!;
     const scores: number[] = [];
+    const distanceFromFirst: number[] = [];
+    let first: Float32Array | null = null;
     for (const [i, t] of times.entries()) {
       check();
       await seek(video, t);
       small.drawImage(video, 0, 0, sw, sh);
-      scores.push(sharpness(toGray(small.getImageData(0, 0, sw, sh).data), sw, sh));
+      const gray = toGray(small.getImageData(0, 0, sw, sh).data);
+      scores.push(sharpness(gray, sw, sh));
+      first ??= gray;
+      distanceFromFirst.push(centerDistance(first, gray, sw, sh));
       if (i % 12 === 0) onProgress(`Picking sharp frames… ${Math.round((i / count) * 100)}%`);
     }
+
+    // Turned past 360°? Keep exactly one turn, so the spin's last frame leads seamlessly into its first.
+    const loopEnd = findLoopEnd(distanceFromFirst);
+    const usable = loopEnd ?? count;
 
     // Pass 2: grab the sharpest candidate of each slot at full size.
     const scale = Math.min(1, SPIN_MAX_SIDE / Math.max(vw, vh));
     const full = new OffscreenCanvas(Math.round(vw * scale), Math.round(vh * scale));
     const ctx = full.getContext('2d')!;
-    for (const i of pickSharpest(scores, SPIN_FRAMES)) {
+    for (const i of pickSharpest(scores.slice(0, usable), SPIN_FRAMES)) {
       check();
       await seek(video, times[i]);
       ctx.drawImage(video, 0, 0, full.width, full.height);
       frames.push(await createImageBitmap(full));
     }
-    return frames;
+    // Only report a trimmed turn when it actually cut something off (a turn ending at the very end is the whole video).
+    const trimmed = loopEnd !== null && times[loopEnd] < duration * 0.95;
+    return { frames, turnSeconds: trimmed ? times[loopEnd] : null };
   } catch (err) {
     for (const f of frames) f.close();
     throw err;
@@ -129,7 +145,7 @@ export async function loadFrames(
   files: File[],
   onProgress: (text: string) => void,
   isCancelled: () => boolean,
-): Promise<{ kind: InputKind; frames: ImageBitmap[] }> {
+): Promise<{ kind: InputKind; frames: ImageBitmap[]; turnSeconds?: number | null }> {
   const check = () => {
     if (isCancelled()) throw new Cancelled();
   };
@@ -139,7 +155,7 @@ export async function loadFrames(
   const video = files.find((f) => f.type.startsWith('video/'));
   if (video) {
     progress('Reading the video…');
-    return { kind: 'video', frames: await framesFromVideo(video, progress, check) };
+    return { kind: 'video', ...(await framesFromVideo(video, progress, check)) };
   }
   const photos = files
     .filter((f) => f.type.startsWith('image/'))

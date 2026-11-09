@@ -172,7 +172,8 @@ async function handleFiles(files: File[]) {
     stage.hidden = false;
     setOriginal(false);
     spin.setCount(frames.length);
-    setStatus(isSpin ? `Done: a ${frames.length}-frame 360° spin, cut out on-device.` : 'Done. Background removed on-device.');
+    const turn = loaded.turnSeconds ? ` One full turn found at ${loaded.turnSeconds.toFixed(1)} s; the rest of the video is skipped.` : '';
+    setStatus(isSpin ? `Done: a ${frames.length}-frame 360° spin, cut out on-device.${turn}` : 'Done. Background removed on-device.');
   } catch (err) {
     if (cancelled()) return;
     setStatus(err instanceof InputError ? `Can't use that: ${err.message}.` : `Something went wrong: ${String(err)}`);
@@ -284,19 +285,24 @@ reflection.addEventListener('change', () => {
   spin.redraw();
 });
 
-const sampleButton = $<HTMLButtonElement>('sample');
-sampleButton.addEventListener('click', async () => {
-  sampleButton.disabled = true;
-  try {
-    const res = await fetch(`${import.meta.env.BASE_URL}samples/mug-walkaround.mp4`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    await handleFiles([new File([await res.blob()], 'mug-walkaround.mp4', { type: 'video/mp4' })]);
-  } catch (err) {
-    setStatus(`Could not load the sample: ${String(err)}`);
-  } finally {
-    sampleButton.disabled = false;
-  }
-});
+const SAMPLES = new Set(['mug-turntable.mp4', 'mug-walkaround.mp4']);
+const sampleButtons = document.querySelectorAll<HTMLButtonElement>('button[data-sample]');
+for (const button of sampleButtons) {
+  button.addEventListener('click', async () => {
+    const name = button.dataset.sample ?? '';
+    if (!SAMPLES.has(name)) return;
+    for (const b of sampleButtons) b.disabled = true;
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}samples/${name}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await handleFiles([new File([await res.blob()], name, { type: 'video/mp4' })]);
+    } catch (err) {
+      setStatus(`Could not load the sample: ${String(err)}`);
+    } finally {
+      for (const b of sampleButtons) b.disabled = false;
+    }
+  });
+}
 toggle.addEventListener('click', () => setOriginal(!showingOriginal));
 playButton.addEventListener('click', () => (spin.playing ? spin.pause() : spin.play()));
 $('download').addEventListener('click', () => exportFrame('png'));

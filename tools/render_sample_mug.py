@@ -1,13 +1,21 @@
-# Render the sample walkaround video (public/samples/mug-walkaround.mp4): a mug on a busy set, filmed
-# like a handheld phone: one orbit with wobble, distance drift and auto-exposure drift, to exercise
-# the spin pipeline's stabilization and colour matching.
-# Usage: blender -b -P tools/render_sample_mug.py -- OUT_DIR   (tested with Blender 5.2)
+# Render the sample videos of a mug on a busy set (tested with Blender 5.2):
+#   walkaround  public/samples/mug-walkaround.mp4: filmed like a handheld phone, one orbit with wobble,
+#               distance drift and auto-exposure drift, to exercise stabilization and colour matching
+#   turntable   public/samples/mug-turntable.mp4: phone still, mug on a lazy Susan turning 1.5 times,
+#               to exercise finding one full turn in a video that overshoots
+# Usage: blender -b -P tools/render_sample_mug.py -- OUT_DIR [walkaround|turntable]
+import math
 import sys
 
 import bpy
 
-out_dir = sys.argv[sys.argv.index("--") + 1]
-FRAMES = 150  # 5 s at 30 fps
+args = sys.argv[sys.argv.index("--") + 1 :]
+out_dir = args[0]
+MODE = args[1] if len(args) > 1 else "walkaround"
+if MODE not in ("walkaround", "turntable"):
+    raise SystemExit(f"unknown mode {MODE!r}")
+FRAMES = 150 if MODE == "walkaround" else 180  # 5 s or 6 s at 30 fps
+TURNTABLE_TURNS = 1.5
 scene = bpy.context.scene
 
 # Clean scene
@@ -92,22 +100,40 @@ track.up_axis = "UP_Y"
 cam.data.lens = 35
 
 scene.frame_start, scene.frame_end = 1, FRAMES
-for f in range(1, FRAMES + 1):
-    t = (f - 1) / FRAMES
-    a = 2 * math.pi * t
-    r = 3.2 * (1 + 0.08 * math.sin(3 * a))  # walking closer and farther
-    z = 1.6 + 0.12 * math.sin(5 * a + 1)  # hand height wobble
-    jitter = 0.03 * math.sin(17 * a)
-    cam.location = (r * math.cos(a) + jitter, r * math.sin(a), z)
-    cam.keyframe_insert("location", frame=f)
-    target.location = (0.04 * math.sin(7 * a), 0.04 * math.cos(9 * a), 0.5)  # aim drift
-    target.keyframe_insert("location", frame=f)
+if MODE == "walkaround":
+    for f in range(1, FRAMES + 1):
+        t = (f - 1) / FRAMES
+        a = 2 * math.pi * t
+        r = 3.2 * (1 + 0.08 * math.sin(3 * a))  # walking closer and farther
+        z = 1.6 + 0.12 * math.sin(5 * a + 1)  # hand height wobble
+        jitter = 0.03 * math.sin(17 * a)
+        cam.location = (r * math.cos(a) + jitter, r * math.sin(a), z)
+        cam.keyframe_insert("location", frame=f)
+        target.location = (0.04 * math.sin(7 * a), 0.04 * math.cos(9 * a), 0.5)  # aim drift
+        target.keyframe_insert("location", frame=f)
 
-# Auto-exposure drift, like a phone camera
-scene.view_settings.exposure = 0
-for f, ev in ((1, 0.0), (50, 0.35), (100, -0.25), (FRAMES, 0.0)):
-    scene.view_settings.exposure = ev
-    scene.view_settings.keyframe_insert("exposure", frame=f)
+    # Auto-exposure drift, like a phone camera
+    scene.view_settings.exposure = 0
+    for f, ev in ((1, 0.0), (50, 0.35), (100, -0.25), (FRAMES, 0.0)):
+        scene.view_settings.exposure = ev
+        scene.view_settings.keyframe_insert("exposure", frame=f)
+else:
+    # Phone on a stand; the mug sits on a lazy Susan that turns at a steady speed, a bit past one turn.
+    cam.location = (0, -3.4, 1.5)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=0.75, depth=0.05, location=(0, 0, 0.025))
+    susan = bpy.context.object
+    bpy.ops.object.shade_smooth()
+    susan.data.materials.append(material("susan", (0.32, 0.2, 0.12), rough=0.35))
+    for part in (body, handle, band):
+        part.parent = susan
+        part.matrix_parent_inverse = susan.matrix_world.inverted()
+        part.location.z += 0.05  # sit on top of the board
+    # Constant speed, like a motorised turntable: key every frame, so the interpolation curve can't ease
+    # the motion (with two keys, Blender 5 eased in and out, and changing the interpolation had no effect).
+    susan.rotation_mode = "XYZ"
+    for f in range(1, FRAMES + 1):
+        susan.rotation_euler = (0, 0, 2 * math.pi * TURNTABLE_TURNS * (f - 1) / FRAMES)
+        susan.keyframe_insert("rotation_euler", frame=f)
 
 for engine in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
     try:
@@ -123,6 +149,6 @@ scene.render.image_settings.file_format = "FFMPEG"
 scene.render.ffmpeg.format = "MPEG4"
 scene.render.ffmpeg.codec = "H264"
 scene.render.ffmpeg.constant_rate_factor = "HIGH"
-scene.render.filepath = out_dir + "/mug-walkaround.mp4"
+scene.render.filepath = f"{out_dir}/mug-{MODE}.mp4"
 bpy.ops.render.render(animation=True)
 print("RENDERED", scene.render.filepath)

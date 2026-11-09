@@ -4,7 +4,7 @@
 
 ![A phone walkaround of a mug beside the studio spin the app made from it](docs/hero.gif)
 
-Product photos that never leave your device. Drop in a product photo, several photos, or a short phone video walking around the object. The browser cuts it out with a neural network I trained, stands it in a studio scene with a contact shadow and floor reflection, and turns several frames into a drag-to-spin 360° view. You can export a studio JPG, a 9:16 clip for social media, or a spin to embed on any site. Nothing is uploaded; there is no server.
+Product photos that never leave your device. Drop in a product photo, several photos, or a short phone video of the object turning (on a lazy Susan, with the phone held still) or of you walking around it. The browser cuts it out with a neural network I trained, stands it in a studio scene with a contact shadow and floor reflection, and turns several frames into a drag-to-spin 360° view. You can export a studio JPG, a 9:16 clip for social media, or a spin to embed on any site. Nothing is uploaded; there is no server.
 
 ## In 60 seconds
 
@@ -34,6 +34,13 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 |---|---|---|---|---|
 | Desktop, Chrome, RTX 3070 | **14 @512** | 229 @384 | 40 @320 | 1,422 @320 |
 | Android 10 phone, Chrome, Imagination D-Series GPU | 510 @512 | **183 @384** | 1,595 @320 | 1,306 @320 |
+
+**Finding one full turn.** People rarely stop a turntable at exactly 360°. The app compares every candidate frame with the first and keeps the video up to the moment the object comes back to its starting view. On the turntable sample, which turns 1.5 times in 6 s, it finds the turn at **4.0 s**, exactly where the render completes one rotation. Seam size (the jump from the last spin frame back to the first, divided by an average step; 1.0 is seamless):
+
+| | Seam |
+|---|---|
+| 36 frames over the whole video (before) | 1.84, and the spin turns 1.5 times per loop |
+| 36 frames over the detected turn | **0.86** |
 
 **360° spin**, from the 5-second sample walkaround: 108 candidate frames scored, 36 kept, all cut out and placed in about **3 s**. Frame-to-frame wobble, in % of object height:
 
@@ -86,7 +93,8 @@ Thin, sparse structures are where the small model loses most (gaps of +0.33 to +
 
 ```
 files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by name │ a video: score 108 moments
-              │       for sharpness on a 160 px copy, keep the sharpest of every 3 → 36 frames (≤1024 px)
+              │       for sharpness on a 160 px copy, find where one full turn ends (loop.ts),
+              │       keep the sharpest of every 3 within that turn → 36 frames (≤1024 px)
               ▼
           worker      each frame: RGB/255 → ONNX Runtime Web (WebGPU 512 px, else WASM 384 px) → alpha
               ▼
@@ -125,18 +133,19 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
 
 ## What I'd do next
 
-1. **Close the thin-structure gap.** Train at 768 px or more, weight DIS5K's thin categories more, and add an edge-refinement stage. That's where the gap to BiRefNet sits (see the category table).
-2. **Clean-license model.** Retrain on Open Images V7 masks (CC BY 4.0) and my own photos, so the weights can be used commercially. The current ones inherit DUTS and DIS5K's research-only terms.
-3. **Alpha matting** for glass and other translucent products, and a touch-up brush for the cases a model will always miss: mirrors, and "which item is the product?".
-4. **Safari and iPhone testing.** WebGPU there is new, WebP encoding falls back to JPEG, and video seeking has known quirks. None of it is verified yet.
-5. **Smaller runtime download:** load ONNX Runtime's WASM-only build on devices where the CPU wins the probe.
+1. **Guided capture for walkarounds.** Handheld walkarounds are hard to shoot because the camera's height and tilt drift, which no 2D correction can undo; the turntable method avoids it. For walkarounds, the phone's motion sensors could show a live level indicator against the starting pose and take a frame automatically every 10° of heading. Frames shot at a tilt could be straightened afterwards.
+2. **Close the thin-structure gap.** Train at 768 px or more, weight DIS5K's thin categories more, and add an edge-refinement stage. That's where the gap to BiRefNet sits (see the category table).
+3. **Clean-license model.** Retrain on Open Images V7 masks (CC BY 4.0) and my own photos, so the weights can be used commercially. The current ones inherit DUTS and DIS5K's research-only terms.
+4. **Alpha matting** for glass and other translucent products, and a touch-up brush for the cases a model will always miss: mirrors, and "which item is the product?".
+5. **Safari and iPhone testing.** WebGPU there is new, WebP encoding falls back to JPEG, and video seeking has known quirks. None of it is verified yet.
+6. **Smaller runtime download:** load ONNX Runtime's WASM-only build on devices where the CPU wins the probe.
 
 ## Run it
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173 (benchmarks at /bench.html)
-npm test         # 53 unit tests: tensors, stabilization, colour, sharpness, clip timing, embed safety
+npm test         # 60 unit tests: tensors, stabilization, loop detection, colour, sharpness, clip timing, embed safety
 npm run build    # static site in dist/, deployable to Vercel or any static host
 ```
 
@@ -146,7 +155,7 @@ Training, evaluation, the failure analysis and the gallery are in [training/](tr
 |---|---|
 | `src/` | The app: worker, pipeline, stabilization, scene, spin viewer, exports, benchmark page |
 | `training/` | Model, synthetic data, training loop, ONNX export, evaluation, failure analysis |
-| `tools/` | Blender scripts for the sample video and hard cases; a dev-only plugin that saves sample exports |
+| `tools/` | Blender scripts for the sample videos (walkaround, turntable) and hard cases; a dev-only plugin that saves sample exports |
 | `docs/` | Hero GIF, failure gallery, sample clip |
 
 ## Credits and licenses

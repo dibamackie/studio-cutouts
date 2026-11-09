@@ -25,10 +25,34 @@
       <label id="drop" class="drop" for="file">
         <input id="file" type="file" accept="image/*,video/*" multiple />
         <span class="drop-title">Drop a product photo</span>
-        <span class="drop-hint">or several photos, or a short video walking around it · click to choose</span>
+        <span class="drop-hint">or several photos, or a short video of it turning · click to choose</span>
       </label>
 
-      <p class="sample-line">No video handy? <button id="sample" type="button" class="link">Try the sample spin</button> (a rendered mug, 5 s).</p>
+      <p class="sample-line">
+        No video handy? Try a sample:
+        <button type="button" class="link" data-sample="mug-turntable.mp4">turntable</button> (phone still, 1.5 turns) or
+        <button type="button" class="link" data-sample="mug-walkaround.mp4">walkaround</button> (handheld, one orbit).
+      </p>
+
+      <details class="shoot-tips">
+        <summary>How to shoot a 360°</summary>
+        <ol>
+          <li>
+            <strong>Keep the phone still and turn the object.</strong> Prop the phone on a stand or a stack of books, put
+            the object on a lazy Susan, a swivel stool or a plate, and film one slow turn. Turning a bit more than once is
+            fine: the app finds where one full turn ends and keeps exactly that.
+          </li>
+          <li>
+            <strong>No turntable?</strong> Turn the object by hand about 10–15° at a time and take a photo after each turn,
+            phone not moving, then drop all the photos. They're ordered by file name.
+          </li>
+          <li>
+            <strong>Walking around works too</strong>, but it's the hardest: keep the phone at the same height and tilt the
+            whole way. The app evens out distance and position, but it can't undo a change in viewing angle.
+          </li>
+          <li>Use a plain background and even light, and keep hands and other moving things out of the shot.</li>
+        </ol>
+      </details>
 
       <p id="status" class="status" role="status" aria-live="polite">Loading model…</p>
 
