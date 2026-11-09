@@ -62,12 +62,33 @@
           <button id="copy" type="button" hidden>Copy results</button>
         </div>
         <p id="bench-status" class="status" role="status" aria-live="polite"></p>
-        <div class="table-wrap">
+        <div class="table-wrap" id="speed-wrap" hidden>
           <table id="speed">
             <thead>
               <tr>
                 <th scope="col">Model</th><th scope="col">Backend</th><th scope="col">Input</th>
                 <th scope="col">First run</th><th scope="col">Median</th><th scope="col">p90</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="devices-h">
+        <h2 id="devices-h">Measured devices</h2>
+        <p class="lede">
+          Median ms per frame from this page's speed test, copied as-is. The fastest backend for each model is
+          highlighted: on some phones the CPU beats the GPU, which is why the app times both on a device's first visit
+          and keeps the faster one.
+        </p>
+        <div class="table-wrap">
+          <table id="devices">
+            <thead>
+              <tr>
+                <th scope="col">Device</th>
+                <th scope="col">Studio v1 WebGPU</th><th scope="col">Studio v1 WASM</th>
+                <th scope="col">U²-Netp WebGPU</th><th scope="col">U²-Netp WASM</th>
               </tr>
             </thead>
             <tbody></tbody>

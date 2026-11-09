@@ -1,5 +1,6 @@
 import './style.css';
 import results from './bench-results.json';
+import devices from './device-results.json';
 import { MODELS, type Backend, type ModelId } from './models';
 import type { BenchResult, FromWorker } from './protocol';
 
@@ -88,12 +89,33 @@ function benchOne(worker: Worker, modelId: ModelId, backend: Backend): Promise<B
 
 const ms = (v: number) => (v >= 100 ? `${Math.round(v)} ms` : `${v.toFixed(1)} ms`);
 
+function renderDevices(list: { label: string; device: string; results: BenchResult[] }[]) {
+  const body = $<HTMLTableElement>('devices').tBodies[0];
+  for (const entry of list) {
+    const tr = body.insertRow();
+    const name = document.createElement('th');
+    name.scope = 'row';
+    name.textContent = entry.label;
+    name.title = entry.device;
+    tr.append(name);
+    for (const modelId of Object.keys(MODELS) as ModelId[]) {
+      const runs = entry.results.filter((r) => r.modelId === modelId);
+      const fastest = Math.min(...runs.map((r) => r.medianMs));
+      for (const backend of ['webgpu', 'wasm'] as Backend[]) {
+        const r = runs.find((x) => x.backend === backend);
+        tr.append(r ? cell(`${ms(r.medianMs)} @${r.inputSize}`, r.medianMs === fastest ? 'best' : '') : cell('—'));
+      }
+    }
+  }
+}
+
 async function runBenchmark(device: string) {
   const button = $<HTMLButtonElement>('run');
   const copy = $<HTMLButtonElement>('copy');
   const body = $<HTMLTableElement>('speed').tBodies[0];
   button.disabled = true;
   copy.hidden = true;
+  $('speed-wrap').hidden = false; // empty until the first run, so hide the bare header before that
   body.replaceChildren();
   const collected: (BenchResult | { modelId: ModelId; backend: Backend; error: string })[] = [];
   const worker = new Worker(new URL('./segment.worker.ts', import.meta.url), { type: 'module' });
@@ -135,6 +157,7 @@ async function runBenchmark(device: string) {
 }
 
 renderQuality(results.quality as QualityRow[]);
+renderDevices(devices as { label: string; device: string; results: BenchResult[] }[]);
 describeDevice().then((device) => {
   $('device').textContent = device;
   $('run').addEventListener('click', () => runBenchmark(device));

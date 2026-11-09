@@ -17,7 +17,13 @@ Studio v1 is a 4.5M-parameter U-Net (9.1 MB fp16) trained for this project; see 
 
 DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5,019) is everyday photos. On DIS-TE, Studio v1 gets +0.14 max F and +0.23 IoU over the baseline.
 
-In a standalone test in desktop Chrome (RTX 3070), Studio v1 took 13–19 ms per frame on WebGPU and about 200 ms on the single-thread CPU fallback (U²-Netp: about 1.2 s). The [benchmark page](https://studio-cutouts.vercel.app/bench.html) measures any device, phones included, and copies the results as JSON.
+Speed, median ms per frame, measured with the [benchmark page](https://studio-cutouts.vercel.app/bench.html) (which times any device and copies the results as JSON):
+
+| Device | Studio v1 WebGPU | Studio v1 WASM | U²-Netp WebGPU | U²-Netp WASM |
+|---|---|---|---|---|
+| Android 10 phone, Chrome, Imagination D-Series GPU | 510 @512 | **183 @384** | 1,595 @320 | 1,306 @320 |
+
+In a standalone test in desktop Chrome (RTX 3070), Studio v1 took 13–19 ms per frame on WebGPU and about 200 ms on the single-thread CPU.
 
 ## Run it
 
@@ -44,12 +50,14 @@ photo ──► main thread: decode (EXIF-aware), cap at 4096 px, resize to the 
 
 - **Inference runs in a Web Worker**, so the page never freezes.
 - **Models are cached with the Cache API** under versioned file names: the second visit loads without a network request.
-- **WebGPU first, WASM fallback**, picked at load time; the page shows which backend and input size actually ran.
+- **The backend is measured, not assumed.** On a device's first visit the worker times the model on the CPU (WASM), then on the GPU (WebGPU), and keeps the GPU unless the CPU is at least 20% faster (the GPU runs the sharper 512 px input). The choice is saved in `localStorage`, so later visits skip the probe. The page says which backend won and by how much.
 - **One input size per session.** Changing the input size makes WebGPU recompile its shaders (120–830 ms), so each backend gets a fixed size: 512 px on WebGPU (best quality, ~19 ms) and 384 px on the CPU (~200 ms instead of ~350 ms).
 - **A warm-up run at load** compiles the shaders, so the inference time shown is the real per-photo cost.
 - **Normalization and the sigmoid live inside the exported model**, so the browser code is just "RGB/255 in, alpha out". `src/models.ts` records each model's contract, which is how the U²-Netp baseline still runs side by side.
 
 ## Engineering notes
+
+- **WebGPU isn't always faster.** On an Android 10 phone with an Imagination D-Series GPU, Studio v1 took 510 ms per frame on WebGPU and 183 ms on a single CPU thread; U²-Netp was slower on WebGPU too. The first version of the app chose WebGPU whenever it existed, which made that phone about 3× slower and added ~4.8 s of GPU setup. Hence the first-visit probe.
 
 - **Multithreaded WASM hangs inside a Web Worker** (ONNX Runtime Web 1.31.1): session creation never resolves with `numThreads > 1`, for both the WebGPU and WASM backends. The worker pins one thread. With Studio v1 the CPU fallback is still ~200 ms per photo, and the site doesn't need cross-origin isolation headers (COOP/COEP), which keeps static hosting and embedding simple.
 - **The runtime is bigger than the model.** ONNX Runtime's WebGPU build is 7.3 MB gzipped, versus 9.1 MB for the model (fp16). Loading the smaller WASM-only build when WebGPU is unavailable is a planned optimization.

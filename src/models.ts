@@ -35,6 +35,16 @@ export const MODELS: Record<ModelId, ModelSpec> = {
 
 export const DEFAULT_MODEL: ModelId = 'studio-v1';
 
+/**
+ * WebGPU runs the larger, sharper input size, so keep it unless the CPU is clearly faster.
+ * Measured on an Android phone with an Imagination D-Series GPU: WebGPU 510 ms vs WASM 183 ms.
+ */
+export const CPU_WIN_RATIO = 0.8;
+
+export function pickBackend(webgpuMs: number | null, wasmMs: number): Backend {
+  return webgpuMs !== null && webgpuMs * CPU_WIN_RATIO <= wasmMs ? 'webgpu' : 'wasm';
+}
+
 export function isModelId(value: unknown): value is ModelId {
   return typeof value === 'string' && Object.hasOwn(MODELS, value);
 }

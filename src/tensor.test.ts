@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { alphaToMaskRgba, IMAGENET_MEAN, IMAGENET_STD, percentile, probToAlpha, toAlpha, toRembgTensor, toUnitTensor } from './tensor';
-import { isModelId, MODELS } from './models';
+import { isModelId, MODELS, pickBackend } from './models';
 
 describe('toRembgTensor (U²-Netp contract)', () => {
   test('lays pixels out as NCHW planes and normalizes by image max then ImageNet stats', () => {
@@ -77,4 +77,19 @@ test('model registry validates ids from the URL', () => {
     expect(spec.inputSize.webgpu % 32).toBe(0);
     expect(spec.inputSize.wasm % 32).toBe(0);
   }
+});
+
+describe('pickBackend', () => {
+  test('keeps WebGPU when it is faster or only slightly slower', () => {
+    expect(pickBackend(19, 196)).toBe('webgpu'); // desktop RTX 3070
+    expect(pickBackend(110, 100)).toBe('webgpu'); // within the 20% margin: keep the sharper 512 px input
+  });
+
+  test('switches to the CPU when it is clearly faster', () => {
+    expect(pickBackend(510, 183)).toBe('wasm'); // Android phone, Imagination D-Series GPU
+  });
+
+  test('uses the CPU when WebGPU did not start', () => {
+    expect(pickBackend(null, 183)).toBe('wasm');
+  });
 });

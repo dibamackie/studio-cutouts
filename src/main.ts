@@ -1,10 +1,12 @@
 import './style.css';
 import { alphaToMaskRgba } from './tensor';
-import { DEFAULT_MODEL, isModelId, MODELS } from './models';
-import type { FromWorker } from './protocol';
+import { DEFAULT_MODEL, isModelId, MODELS, type Backend } from './models';
+import type { FromWorker, Probe } from './protocol';
 
 const requested = new URLSearchParams(location.search).get('model'); // ?model=u2netp compares against the baseline
 const model = MODELS[isModelId(requested) ? requested : DEFAULT_MODEL];
+// shortcut: the probe's verdict is kept until storage is cleared; bump the key's version if the model or runtime changes speed
+const BACKEND_KEY = `studio.backend.v1.${model.id}`;
 const MAX_SIDE = 4096; // shortcut: caps output resolution to stay under mobile canvas limits; tile if we ever need more
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -30,11 +32,38 @@ let requestId = 0;
 let original: ImageBitmap | null = null;
 let cutout: HTMLCanvasElement | null = null;
 let showingOriginal = false;
+let readyText = 'Loading model…';
 let markReady: (inputSize: number) => void;
 const modelReady = new Promise<number>((resolve) => (markReady = resolve));
 readout.model.textContent = `${model.label} · ${model.megabytes} MB`;
 
 const setStatus = (text: string) => (status.textContent = text);
+
+function storedBackend(): Backend | undefined {
+  try {
+    const value = localStorage.getItem(BACKEND_KEY);
+    return value === 'webgpu' || value === 'wasm' ? value : undefined;
+  } catch {
+    return undefined; // storage blocked (private mode, sandboxed preview): just probe again
+  }
+}
+
+function rememberBackend(backend: Backend) {
+  try {
+    localStorage.setItem(BACKEND_KEY, backend);
+  } catch {
+    // best-effort: without storage the next visit probes again
+  }
+}
+
+function readyMessage(backend: Backend, probe: Probe | undefined): string {
+  if (!probe) return 'Model ready. Runs entirely in your browser.';
+  if (probe.webgpuMs === null) return 'Model ready on the CPU: WebGPU did not start on this device.';
+  const times = `GPU ${Math.round(probe.webgpuMs)} ms vs CPU ${Math.round(probe.wasmMs)} ms per frame`;
+  return backend === 'webgpu'
+    ? `Model ready on the GPU (${times}).`
+    : `Model ready on the CPU: it beat the GPU on this device (${times}).`;
+}
 
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
   const msg = e.data;
@@ -47,7 +76,9 @@ worker.onmessage = (e: MessageEvent<FromWorker>) => {
     case 'ready':
       readout.backend.textContent = `${msg.backend === 'webgpu' ? 'WebGPU' : 'WASM (CPU)'} · ${msg.inputSize}px`;
       readout.load.textContent = `${Math.round(msg.loadMs)} ms`;
-      if (!original) setStatus('Model ready. Runs entirely in your browser.');
+      if (msg.probe) rememberBackend(msg.backend);
+      readyText = readyMessage(msg.backend, msg.probe);
+      if (!original) setStatus(readyText);
       markReady(msg.inputSize);
       break;
     case 'result':
@@ -65,7 +96,7 @@ worker.onmessage = (e: MessageEvent<FromWorker>) => {
       break;
   }
 };
-worker.postMessage({ type: 'init', modelId: model.id });
+worker.postMessage({ type: 'init', modelId: model.id, preferred: storedBackend() });
 
 function composite(image: ImageBitmap, alpha: Uint8ClampedArray<ArrayBuffer>, size: number): HTMLCanvasElement {
   const mask = document.createElement('canvas');
@@ -173,5 +204,5 @@ reset.addEventListener('click', () => {
   stage.hidden = true;
   dropZone.classList.remove('compact');
   fileInput.value = '';
-  setStatus('Model ready. Runs entirely in your browser.');
+  setStatus(readyText);
 });
