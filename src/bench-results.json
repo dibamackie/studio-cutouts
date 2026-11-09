@@ -69,5 +69,5 @@
       }
     }
   ],
-  "notes": "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU; its ONNX export is too big to download and run comfortably in a browser. U²-Netp and BiRefNet were trained on DUTS-TR and DIS-TR respectively, so each has a home set here."
+  "notes": "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. U²-Netp was trained on DUTS-TR, so DUTS-TE is its home set."
 }

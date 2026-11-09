@@ -17,11 +17,10 @@ ROWS = [
     {"key": ("studio-cutout.fp16.onnx", 384), "label": "Studio v1", "browser": True, "mine": True},
     {"key": ("studio-cutout.fp16.onnx", 512), "label": "Studio v1", "browser": True, "mine": True},
 ]
-NOTES = (
-    "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. "
-    "BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU; "
-    "its ONNX export is too big to download and run comfortably in a browser. "
-    "U²-Netp and BiRefNet were trained on DUTS-TR and DIS-TR respectively, so each has a home set here."
+NOTES = "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. U²-Netp was trained on DUTS-TR, so DUTS-TE is its home set."
+BIREFNET_NOTE = (
+    " BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU;"
+    " its 224 MB ONNX export is too big to download and run comfortably in a browser. It was trained on DIS-TR."
 )
 
 
@@ -47,7 +46,8 @@ def build(records: list[dict]) -> dict:
         })
     if not rows:
         raise SystemExit("no complete rows; run evaluate.py on both sets first")
-    return {"quality": rows, "notes": NOTES}
+    has_birefnet = any(r["label"] == "BiRefNet_lite" for r in rows)
+    return {"quality": rows, "notes": NOTES + (BIREFNET_NOTE if has_birefnet else "")}
 
 
 def main() -> None:

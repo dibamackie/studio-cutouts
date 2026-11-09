@@ -25,3 +25,10 @@ def test_builds_rows_in_display_order_and_skips_incomplete_models():
 def test_fails_when_nothing_is_complete():
     with pytest.raises(SystemExit):
         build([_rec("u2netp.onnx", 320, "dis-te", 0.6)])
+
+
+def test_birefnet_note_only_appears_with_its_row():
+    base = [_rec("u2netp.onnx", 320, s, 0.8) for s in ("dis-te", "duts-te")]
+    assert "BiRefNet" not in build(base)["notes"]
+    with_ref = base + [_rec("birefnet_lite.onnx", 1024, s, 0.9) for s in ("dis-te", "duts-te")]
+    assert "BiRefNet" in build(with_ref)["notes"]
