@@ -23,11 +23,12 @@ const F=["data:image/webp;base64,UklGRtoeAABXRUJQVlA4WAoAAAAgAAAAHwMAHwMASUNDUMg
 (()=>{const c=document.querySelector('canvas'),x=c.getContext('2d'),hint=document.querySelector('p'),n=F.length;
 const imgs=F.map(s=>{const i=new Image();i.src=s;return i});
 let i=0,last=0,drag=null,play=n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
-const show=k=>{i=((k%n)+n)%n;x.drawImage(imgs[i],0,0,c.width,c.height);
+const show=k=>{i=((k%n)+n)%n;if(!imgs[i].complete)return;x.drawImage(imgs[i],0,0,c.width,c.height);
 c.setAttribute('aria-valuenow',i+1);c.setAttribute('aria-valuetext','Frame '+(i+1)+' of '+n)};
 const stop=()=>{play=false;hint.style.opacity=0};
 const tick=t=>{if(play&&t-last>6000/n){last=t;show(i+1)}requestAnimationFrame(tick)};
-Promise.all(imgs.map(im=>im.decode())).then(()=>{show(0);requestAnimationFrame(tick)});
+imgs[0].decode().then(()=>show(0));
+Promise.all(imgs.map(im=>im.decode())).then(()=>requestAnimationFrame(tick));
 c.onpointerdown=e=>{if(e.button||n<2)return;stop();drag={x:e.clientX,i,id:e.pointerId};c.setPointerCapture(e.pointerId)};
 c.onpointermove=e=>{if(drag&&e.pointerId===drag.id)show(drag.i-Math.round((e.clientX-drag.x)/(c.clientWidth/n)))};
 c.onpointerup=c.onpointercancel=()=>{drag=null};
