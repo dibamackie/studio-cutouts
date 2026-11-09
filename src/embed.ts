@@ -19,6 +19,8 @@ function checkFrames(frames: readonly string[], what: string) {
 /**
  * The viewer page. Only base64 image data and a validated colour go in, so nothing can inject markup.
  * Autoplay has a Play/Pause button: moving content that lasts more than 5 s needs a way to stop it.
+ * Loading order matters on a slow connection: the first frame is a CSS poster near the top, the studio
+ * frames and viewer come next, and the originals (the bulk of a before/after file) stream in last.
  */
 export function buildEmbedHtml(frames: readonly string[], background: string, options: EmbedOptions = {}): string {
   const { originals, size = EMBED_SIZE } = options;
@@ -62,16 +64,16 @@ button:hover{background:#000d}
 </head>
 <body>
 <canvas width="${size}" height="${size}" tabindex="0" role="slider" aria-label="360° product view"
-  aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="1" aria-valuetext="Frame 1 of ${n}"></canvas>
+  aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="1" aria-valuetext="Frame 1 of ${n}"
+  style="background:url(${frames[0]}) center/100% 100% no-repeat"></canvas>
 <p aria-hidden="true">Drag to turn</p>
 ${controls ? `<nav aria-label="Viewer controls">${controls}</nav>` : ''}
+<script>const F=${JSON.stringify(frames)};</script>
 <script>
-const F=${JSON.stringify(frames)};
-const O=${JSON.stringify(originals ?? [])};
 (()=>{const c=document.querySelector('canvas'),x=c.getContext('2d'),hint=document.querySelector('p'),n=F.length;
 const playBtn=document.getElementById('play'),views=[...document.querySelectorAll('[data-view]')];
 const load=list=>list.map(s=>{const i=new Image();i.src=s;return i});
-const studio=load(F);let orig=null;const originals=()=>orig??=load(O); // only decoded once asked for: they'd delay the first studio frame
+const studio=load(F);let orig=null;
 let set=studio,i=0,last=0,drag=null,play=n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const show=k=>{i=((k%n)+n)%n;if(!set[i].complete)return;x.drawImage(set[i],0,0,c.width,c.height);
 c.setAttribute('aria-valuenow',i+1);c.setAttribute('aria-valuetext','Frame '+(i+1)+' of '+n)};
@@ -87,11 +89,15 @@ c.onpointerup=c.onpointercancel=()=>{drag=null};
 c.onkeydown=e=>{const t={ArrowRight:i+1,ArrowLeft:i-1,Home:0,End:n-1}[e.key];
 if(t!==undefined){e.preventDefault();stop();show(t)}else if(e.key===' '){e.preventDefault();setPlay(!play)}};
 if(playBtn)playBtn.onclick=()=>{setPlay(!play);if(!play)hint.style.opacity=0};
-views.forEach(b=>b.onclick=()=>{set=b.dataset.view==='original'?originals():studio;
+const pick=b=>{const want=b.dataset.view==='original';
+if(want&&!self.O){b.setAttribute('aria-busy','true');self.onOriginals=()=>{b.removeAttribute('aria-busy');pick(b)};return}
+set=want?(orig??=load(self.O)):studio; // originals decode only once asked for
 views.forEach(v=>v.setAttribute('aria-pressed',v===b));
-if(set[i].complete)show(i);else set[i].decode().then(()=>show(i))});
+if(set[i].complete)show(i);else set[i].decode().then(()=>show(i))};
+views.forEach(b=>b.onclick=()=>pick(b));
 })();
 </script>
+${originals ? `<script>self.O=${JSON.stringify(originals)};self.onOriginals&&self.onOriginals();</script>` : ''}
 </body>
 </html>
 `;
