@@ -7,6 +7,9 @@ import type { Plugin } from 'vite';
 const DESTINATIONS: Record<string, string> = {
   embed: 'public/embed/mug-spin.html', // hosted, so the app and README can link a live embed
   clip: 'docs/mug-clip.mp4', // shown in the README
+  'showcase-embed': 'public/showcase/pill-bottle-spin.html', // a real phone capture, shown on the home page
+  'showcase-clip': 'docs/showcase-clip.mp4',
+  'showcase-jpg': 'docs/showcase-studio.jpg',
 };
 const MAX_BYTES = 20_000_000;
 

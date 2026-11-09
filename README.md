@@ -1,6 +1,6 @@
 # Studio
 
-**[Try it live](https://studio-cutouts.vercel.app)** · **[Benchmarks](https://studio-cutouts.vercel.app/bench.html)** · **[Sample embed](https://studio-cutouts.vercel.app/embed/mug-spin.html)**
+**[Try it live](https://studio-cutouts.vercel.app)** · **[Benchmarks](https://studio-cutouts.vercel.app/bench.html)** · **[Real-phone showcase](#from-a-real-phone)** · **[Sample embed](https://studio-cutouts.vercel.app/embed/mug-spin.html)**
 
 ![A phone walkaround of a mug beside the studio spin the app made from it](docs/hero.gif)
 
@@ -15,6 +15,14 @@ Product photos that never leave your device. Drop in a product photo, several ph
   - **WebGPU was 3× slower than the CPU on a real Android phone.** So the app now times both backends on a device's first visit and keeps the faster one.
   - **Re-centering every frame added jitter** when checked against an independent measure. So the spin corrects only slow drift.
 - **Honest about limits.** Glass, mirror-chrome, thin wire structures and cluttered scenes all fail in specific, documented ways, with a per-category comparison against BiRefNet showing where the gap is ([Where it fails](#where-it-fails)).
+
+## From a real phone
+
+![36 phone photos of a pill bottle beside the studio spin made from them](docs/showcase.gif)
+
+36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts.vercel.app) or as a [standalone embed](https://studio-cutouts.vercel.app/showcase/pill-bottle-spin.html) (0.8 MB); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
+
+This capture also found a bug. WhatsApp names photos sent in the same second "x.jpeg", "x (1).jpeg", "x (2).jpeg", and a plain name sort puts "x (1)" before "x.jpeg", so the first photo of every second landed last and the spin jumped back and forth. Names are now compared without their extension (`compareFileNames`, tested on these exact names).
 
 ## Results
 
@@ -145,7 +153,7 @@ files ──► frames.ts   one photo (≤4096 px) │ several photos, sorted by
 ```bash
 npm install
 npm run dev      # http://localhost:5173 (benchmarks at /bench.html)
-npm test         # 60 unit tests: tensors, stabilization, loop detection, colour, sharpness, clip timing, embed safety
+npm test         # 63 unit tests: tensors, stabilization, loop detection, colour, sharpness, clip timing, embed safety
 npm run build    # static site in dist/, deployable to Vercel or any static host
 ```
 
@@ -156,7 +164,7 @@ Training, evaluation, the failure analysis and the gallery are in [training/](tr
 | `src/` | The app: worker, pipeline, stabilization, scene, spin viewer, exports, benchmark page |
 | `training/` | Model, synthetic data, training loop, ONNX export, evaluation, failure analysis |
 | `tools/` | Blender scripts for the sample videos (walkaround, turntable) and hard cases; a dev-only plugin that saves sample exports |
-| `docs/` | Hero GIF, failure gallery, sample clip |
+| `docs/` | Hero GIF, real-phone showcase, failure gallery, sample clips |
 
 ## Credits and licenses
 
@@ -167,3 +175,4 @@ Training, evaluation, the failure analysis and the gallery are in [training/](tr
 - Inference: [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), MIT.
 - Clip muxing: [Mediabunny](https://github.com/Vanilagy/mediabunny), MPL-2.0, unmodified.
 - Sample video, hard cases and gallery: rendered for this project in Blender ([`tools/`](tools/)); same license as the code.
+- Showcase photos: taken by the author on a phone; same license as the code.

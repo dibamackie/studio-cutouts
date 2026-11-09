@@ -225,3 +225,28 @@ button.link:hover { transform: none; text-decoration-thickness: 2px; }
 .shoot-tips summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
 .shoot-tips ol { margin: 0.5rem 0 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; }
 .shoot-tips strong { color: var(--ink); font-weight: 600; }
+
+/* Showcase: a real capture, embedded exactly as a customer site would embed it */
+.showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: center;
+  margin-top: clamp(2.5rem, 7vw, 5rem);
+  padding-top: clamp(2rem, 5vw, 3.5rem);
+  border-top: 1px solid var(--line);
+}
+.showcase-kicker { font: 500 0.72rem var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--signal); margin: 0; }
+.showcase h2 { margin: 0.35rem 0 0.75rem; }
+.showcase p { color: var(--ink-soft); max-width: 46ch; }
+.showcase-meta { font: 400 0.78rem var(--font-mono); }
+.showcase-frame {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 60px -30px oklch(20% 0.02 60 / 0.35);
+  background: var(--paper-deep);
+}
+@media (max-width: 720px) {
+  .showcase { grid-template-columns: minmax(0, 1fr); }
+}

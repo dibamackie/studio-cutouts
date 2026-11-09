@@ -137,6 +137,17 @@ async function framesFromPhotos(photos: File[], onProgress: (text: string) => vo
   }
 }
 
+const stem = (name: string) => name.replace(/\.[^.]+$/, '');
+
+/**
+ * Capture order from file names: natural number order, compared without the extension. WhatsApp names
+ * photos sent in the same second "x.jpeg", "x (1).jpeg", "x (2).jpeg"; comparing whole names puts
+ * "x (1)" before "x.jpeg" (space sorts before dot), which shuffled the first photo of every second.
+ */
+export function compareFileNames(a: string, b: string): number {
+  return stem(a).localeCompare(stem(b), undefined, { numeric: true }) || a.localeCompare(b);
+}
+
 /**
  * Decode the dropped files. A video wins over photos; several photos are ordered by file name.
  * Throws `Cancelled` (after freeing what it decoded) as soon as `isCancelled()` turns true.
@@ -157,9 +168,7 @@ export async function loadFrames(
     progress('Reading the video…');
     return { kind: 'video', ...(await framesFromVideo(video, progress, check)) };
   }
-  const photos = files
-    .filter((f) => f.type.startsWith('image/'))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const photos = files.filter((f) => f.type.startsWith('image/')).sort((a, b) => compareFileNames(a.name, b.name));
   if (photos.length === 0) throw new InputError('drop a photo, several photos of one object, or a short video');
   if (photos.length === 1) return { kind: 'photo', frames: [await decode(photos[0], SINGLE_MAX_SIDE)] };
   if (photos.length > MAX_PHOTOS) throw new InputError(`that's ${photos.length} photos; use at most ${MAX_PHOTOS}`);
