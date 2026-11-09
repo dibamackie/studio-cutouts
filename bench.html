@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Quality and speed of Studio's cutout model against U²-Netp and BiRefNet, measured on public test sets and on your device." />
+    <title>Studio Benchmarks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="masthead">
+      <nav class="topnav" aria-label="Main">
+        <p class="wordmark">Studio<span>.</span></p>
+        <a href="./">← Try it</a>
+      </nav>
+      <h1>A 9 MB model that <em>holds its own.</em></h1>
+    </header>
+
+    <main class="bench">
+      <section aria-labelledby="quality-h">
+        <h2 id="quality-h">Quality on public test sets</h2>
+        <p class="lede">
+          Scored at each test image's own resolution. <strong>DIS-TE</strong> (2,000 images) is full of fine detail:
+          chairs, bikes, plants, jewelry. <strong>DUTS-TE</strong> (5,019) is everyday photos. Higher max F and IoU are
+          better; lower MAE is better. Best in each column is highlighted.
+        </p>
+        <div class="table-wrap">
+          <table id="quality">
+            <thead>
+              <tr>
+                <th rowspan="2" scope="col">Model</th>
+                <th rowspan="2" scope="col">Download</th>
+                <th rowspan="2" scope="col">Runs in browser</th>
+                <th colspan="3" scope="colgroup">DIS-TE</th>
+                <th colspan="3" scope="colgroup">DUTS-TE</th>
+              </tr>
+              <tr>
+                <th scope="col">max F</th><th scope="col">IoU</th><th scope="col">MAE</th>
+                <th scope="col">max F</th><th scope="col">IoU</th><th scope="col">MAE</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="footnote" id="quality-notes"></p>
+      </section>
+
+      <section aria-labelledby="speed-h">
+        <h2 id="speed-h">Speed on this device</h2>
+        <p class="lede">
+          Runs both browser models on your GPU (WebGPU) and CPU (WebAssembly), entirely in this tab. Downloads up to
+          14 MB of models the first time. Times are per frame, after the first run, which compiles GPU shaders.
+        </p>
+        <p class="device" id="device">Detecting device…</p>
+        <div class="actions">
+          <button id="run" type="button" class="primary">Run benchmark</button>
+          <button id="copy" type="button" hidden>Copy results</button>
+        </div>
+        <p id="bench-status" class="status" role="status" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table id="speed">
+            <thead>
+              <tr>
+                <th scope="col">Model</th><th scope="col">Backend</th><th scope="col">Input</th>
+                <th scope="col">First run</th><th scope="col">Median</th><th scope="col">p90</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      Evaluation code: <a href="https://github.com/JuanPRG/studio-cutouts/tree/main/training">training/</a>.
+      BiRefNet_lite (MIT) via <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX">onnx-community</a>.
+    </footer>
+
+    <script type="module" src="/src/bench.ts"></script>
+  </body>
+</html>

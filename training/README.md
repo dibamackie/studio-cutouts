@@ -86,4 +86,18 @@ In the browser (desktop Chrome, ONNX Runtime Web 1.31.1, fp16 model):
 
 The first run at each new input size recompiles GPU shaders (120–830 ms), so the app should stick to one size per session.
 
-Full DUTS-TE and DIS-TE results, phone timings and the BiRefNet comparison come with milestone 3.
+### Full test sets
+
+All of DIS-TE (2,000 images, none used for training or model selection) and DUTS-TE (5,019), fp16 ONNX, each image scored at its own resolution. Raw output: [`results/bench-full.jsonl`](results/bench-full.jsonl).
+
+| Model | DIS-TE max F | IoU | MAE | DUTS-TE max F | IoU | MAE |
+|---|---|---|---|---|---|---|
+| U²-Netp @320 | 0.637 | 0.392 | 0.147 | 0.852 | 0.739 | 0.053 |
+| Studio v1 @384 | 0.767 | 0.612 | 0.089 | 0.864 | 0.759 | **0.048** |
+| **Studio v1 @512** | **0.774** | **0.623** | **0.085** | **0.867** | **0.761** | 0.049 |
+
+The page's data file is generated from this output, so the website never shows numbers that weren't measured:
+
+```bash
+python -m studio_train.report --results RUNS/bench-full.jsonl --out ../src/bench-results.json
+```

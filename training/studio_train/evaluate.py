@@ -6,6 +6,9 @@
 Presets describe each model's input/output contract:
   studio  RGB/255 in, alpha out (normalization and sigmoid inside the graph)
   u2netp  rembg's contract: scale by image max, ImageNet-normalize, min-max stretch the first output
+  birefnet  onnx-community BiRefNet_lite: 1024 px, ImageNet-normalize, sigmoid on the last output
+
+Uses CUDA when the installed onnxruntime has it (onnxruntime-gpu), else the CPU.
 """
 
 from __future__ import annotations
@@ -39,12 +42,21 @@ def _u2netp(session: ort.InferenceSession, img: np.ndarray, size: int) -> np.nda
     return (pred - lo) / (hi - lo) if hi > lo else np.zeros_like(pred)
 
 
-PRESETS = {"studio": (_studio, 384), "u2netp": (_u2netp, 320)}
+def _birefnet(session: ort.InferenceSession, img: np.ndarray, size: int) -> np.ndarray:
+    x = np.asarray(Image.fromarray(img).resize((size, size), Image.BILINEAR), np.float32) / 255
+    x = (x - IMAGENET_MEAN) / IMAGENET_STD
+    logits = session.run(None, {session.get_inputs()[0].name: x.transpose(2, 0, 1)[None].astype(np.float32)})[-1][0, 0]
+    return 1 / (1 + np.exp(-logits))  # the export returns logits; the last output is the final map
+
+
+PRESETS = {"studio": (_studio, 384), "u2netp": (_u2netp, 320), "birefnet": (_birefnet, 1024)}
 
 
 def evaluate(model: Path, set_dir: Path, preset: str, size: int | None, limit: int | None) -> dict:
     run, default_size = PRESETS[preset]
     size = size or default_size
+    if "CUDAExecutionProvider" in ort.get_available_providers() and hasattr(ort, "preload_dlls"):
+        ort.preload_dlls()  # onnxruntime-gpu: load the CUDA/cuDNN libraries pip installed alongside it
     providers = [p for p in ("CUDAExecutionProvider", "CPUExecutionProvider") if p in ort.get_available_providers()]
     session = ort.InferenceSession(str(model), providers=providers)
     pairs = load_pairs(set_dir)
@@ -66,7 +78,8 @@ def evaluate(model: Path, set_dir: Path, preset: str, size: int | None, limit: i
         "input_size": size,
         "mb": round(model.stat().st_size / 1e6, 1),
         **{k: round(v, 4) for k, v in metrics.compute().items()},
-        "ms_per_image_cpu": round(seconds / len(pairs) * 1000, 1),
+        "ms_per_image": round(seconds / len(pairs) * 1000, 1),
+        "device": "cuda" if session.get_providers()[0] == "CUDAExecutionProvider" else "cpu",
     }
 
 

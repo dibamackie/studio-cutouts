@@ -38,6 +38,7 @@ body {
   font: 400 1rem/1.5 var(--font-body);
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr); /* lets wide tables scroll inside .table-wrap instead of widening the page */
 }
 
 .masthead { padding: var(--gutter) var(--gutter) 0; max-width: 72rem; margin: 0 auto; width: 100%; }
@@ -120,3 +121,33 @@ button.ghost { border-color: transparent; color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Navigation */
+.topnav { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.topnav a { font: 500 0.85rem var(--font-mono); color: var(--ink-soft); text-decoration: none; letter-spacing: 0.04em; }
+.topnav a:hover, .topnav a:focus-visible { color: var(--signal); }
+
+/* Benchmark page */
+.bench section + section { margin-top: clamp(2.5rem, 6vw, 4.5rem); }
+h2 { font: 400 clamp(1.6rem, 1.1rem + 2vw, 2.4rem) / 1.1 var(--font-display); margin: 0 0 0.5rem; }
+.lede { color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.25rem; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.footnote { color: var(--ink-soft); font-size: 0.82rem; max-width: 70ch; margin-top: 0.75rem; }
+.device { font: 400 0.8rem var(--font-mono); color: var(--ink-soft); overflow-wrap: anywhere; margin: 0 0 1rem; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font: 400 0.88rem var(--font-mono); font-variant-numeric: tabular-nums; }
+th, td { padding: 0.6rem 0.8rem; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+thead th { font: 500 0.7rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+thead th[colspan] { text-align: center; border-left: 1px solid var(--line); }
+tbody th, thead th:first-child { text-align: left; font-weight: 500; }
+tbody tr:last-child > * { border-bottom: 0; }
+tr.mine { background: color-mix(in oklch, var(--signal) 9%, transparent); }
+tr.mine th { color: var(--signal); }
+td.best { color: var(--signal); font-weight: 600; }
+td.strong { font-weight: 600; }
+td.error { text-align: left; color: var(--signal); white-space: normal; }
+button:disabled { opacity: 0.5; cursor: progress; transform: none; }
+/* Keep the model name visible while the table scrolls sideways on phones. */
+tbody th, thead tr:first-child th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; }
+tr.mine th { background: color-mix(in oklch, var(--signal) 9%, var(--paper)); }

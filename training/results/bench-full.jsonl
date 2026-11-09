@@ -1,0 +1,6 @@
+{"model": "studio-cutout.fp16.onnx", "set": "dis-te", "images": 2000, "input_size": 512, "mb": 9.1, "mae": 0.0849, "iou": 0.6234, "max_f": 0.7735, "ms_per_image_cpu": 42.0}
+{"model": "studio-cutout.fp16.onnx", "set": "dis-te", "images": 2000, "input_size": 384, "mb": 9.1, "mae": 0.0889, "iou": 0.6122, "max_f": 0.7665, "ms_per_image_cpu": 25.2}
+{"model": "u2netp.onnx", "set": "dis-te", "images": 2000, "input_size": 320, "mb": 4.6, "mae": 0.1472, "iou": 0.3917, "max_f": 0.6374, "ms_per_image_cpu": 116.4}
+{"model": "studio-cutout.fp16.onnx", "set": "duts-te", "images": 5019, "input_size": 512, "mb": 9.1, "mae": 0.0488, "iou": 0.7612, "max_f": 0.8674, "ms_per_image": 38.8, "device": "cpu"}
+{"model": "studio-cutout.fp16.onnx", "set": "duts-te", "images": 5019, "input_size": 384, "mb": 9.1, "mae": 0.0475, "iou": 0.7591, "max_f": 0.8638, "ms_per_image": 27.1, "device": "cpu"}
+{"model": "u2netp.onnx", "set": "duts-te", "images": 5019, "input_size": 320, "mb": 4.6, "mae": 0.0533, "iou": 0.7388, "max_f": 0.8523, "ms_per_image": 158.0, "device": "cpu"}

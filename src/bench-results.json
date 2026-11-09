@@ -1,0 +1,73 @@
+{
+  "quality": [
+    {
+      "label": "U²-Netp",
+      "megabytes": 4.6,
+      "inputSize": 320,
+      "browser": true,
+      "scores": {
+        "dis-te": {
+          "max_f": 0.6374,
+          "iou": 0.3917,
+          "mae": 0.1472
+        },
+        "duts-te": {
+          "max_f": 0.8523,
+          "iou": 0.7388,
+          "mae": 0.0533
+        }
+      },
+      "images": {
+        "dis-te": 2000,
+        "duts-te": 5019
+      }
+    },
+    {
+      "label": "Studio v1",
+      "megabytes": 9.1,
+      "inputSize": 384,
+      "browser": true,
+      "mine": true,
+      "scores": {
+        "dis-te": {
+          "max_f": 0.7665,
+          "iou": 0.6122,
+          "mae": 0.0889
+        },
+        "duts-te": {
+          "max_f": 0.8638,
+          "iou": 0.7591,
+          "mae": 0.0475
+        }
+      },
+      "images": {
+        "dis-te": 2000,
+        "duts-te": 5019
+      }
+    },
+    {
+      "label": "Studio v1",
+      "megabytes": 9.1,
+      "inputSize": 512,
+      "browser": true,
+      "mine": true,
+      "scores": {
+        "dis-te": {
+          "max_f": 0.7735,
+          "iou": 0.6234,
+          "mae": 0.0849
+        },
+        "duts-te": {
+          "max_f": 0.8674,
+          "iou": 0.7612,
+          "mae": 0.0488
+        }
+      },
+      "images": {
+        "dis-te": 2000,
+        "duts-te": 5019
+      }
+    }
+  ],
+  "notes": "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU; its ONNX export is too big to download and run comfortably in a browser. U²-Netp and BiRefNet were trained on DUTS-TR and DIS-TR respectively, so each has a home set here."
+}

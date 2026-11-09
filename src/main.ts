@@ -1,8 +1,10 @@
 import './style.css';
 import { alphaToMaskRgba } from './tensor';
+import { DEFAULT_MODEL, isModelId, MODELS } from './models';
 import type { FromWorker } from './protocol';
 
-const MODEL_SIZE = 320;
+const requested = new URLSearchParams(location.search).get('model'); // ?model=u2netp compares against the baseline
+const model = MODELS[isModelId(requested) ? requested : DEFAULT_MODEL];
 const MAX_SIDE = 4096; // shortcut: caps output resolution to stay under mobile canvas limits; tile if we ever need more
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -15,6 +17,7 @@ const toggle = $<HTMLButtonElement>('toggle');
 const download = $<HTMLButtonElement>('download');
 const reset = $<HTMLButtonElement>('reset');
 const readout = {
+  model: $('m-model'),
   backend: $('m-backend'),
   load: $('m-load'),
   infer: $('m-infer'),
@@ -27,8 +30,9 @@ let requestId = 0;
 let original: ImageBitmap | null = null;
 let cutout: HTMLCanvasElement | null = null;
 let showingOriginal = false;
-let markReady: () => void;
-const modelReady = new Promise<void>((resolve) => (markReady = resolve));
+let markReady: (inputSize: number) => void;
+const modelReady = new Promise<number>((resolve) => (markReady = resolve));
+readout.model.textContent = `${model.label} · ${model.megabytes} MB`;
 
 const setStatus = (text: string) => (status.textContent = text);
 
@@ -41,10 +45,10 @@ worker.onmessage = (e: MessageEvent<FromWorker>) => {
       break;
     }
     case 'ready':
-      readout.backend.textContent = msg.backend === 'webgpu' ? 'WebGPU' : 'WASM (CPU)';
+      readout.backend.textContent = `${msg.backend === 'webgpu' ? 'WebGPU' : 'WASM (CPU)'} · ${msg.inputSize}px`;
       readout.load.textContent = `${Math.round(msg.loadMs)} ms`;
       if (!original) setStatus('Model ready. Runs entirely in your browser.');
-      markReady();
+      markReady(msg.inputSize);
       break;
     case 'result':
       if (msg.id !== requestId || !original) return; // a newer image replaced this one
@@ -55,12 +59,13 @@ worker.onmessage = (e: MessageEvent<FromWorker>) => {
       setStatus('Done. Background removed on-device.');
       break;
     case 'error':
+      if (msg.context === 'segment' && msg.id !== requestId) return;
       setStatus(`Something went wrong: ${msg.message}`);
       console.error(msg.message);
       break;
   }
 };
-worker.postMessage({ type: 'init' });
+worker.postMessage({ type: 'init', modelId: model.id });
 
 function composite(image: ImageBitmap, alpha: Uint8ClampedArray<ArrayBuffer>, size: number): HTMLCanvasElement {
   const mask = document.createElement('canvas');
@@ -74,7 +79,7 @@ function composite(image: ImageBitmap, alpha: Uint8ClampedArray<ArrayBuffer>, si
   ctx.drawImage(image, 0, 0);
   ctx.globalCompositeOperation = 'destination-in';
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(mask, 0, 0, image.width, image.height); // bilinear upscale of the 320px mask
+  ctx.drawImage(mask, 0, 0, image.width, image.height); // bilinear upscale of the model-size mask
   return out;
 }
 
@@ -117,12 +122,12 @@ async function handleFile(file: File | undefined) {
     showingOriginal = true;
     render();
 
-    await modelReady;
+    const inputSize = await modelReady;
     if (id !== requestId) return;
     setStatus('Cutting out…');
     const forModel = await createImageBitmap(bitmap, {
-      resizeWidth: MODEL_SIZE,
-      resizeHeight: MODEL_SIZE,
+      resizeWidth: inputSize,
+      resizeHeight: inputSize,
       resizeQuality: 'high',
     });
     worker.postMessage({ type: 'segment', id, bitmap: forModel }, [forModel]);

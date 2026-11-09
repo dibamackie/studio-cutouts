@@ -14,7 +14,10 @@
   </head>
   <body>
     <header class="masthead">
-      <p class="wordmark">Studio<span>.</span></p>
+      <nav class="topnav" aria-label="Main">
+        <p class="wordmark">Studio<span>.</span></p>
+        <a href="./bench.html">Benchmarks →</a>
+      </nav>
       <h1>Product cutouts that <em>never leave</em> your device.</h1>
     </header>
 
@@ -39,7 +42,7 @@
       </section>
 
       <dl class="telemetry" aria-label="Run details">
-        <div><dt>Model</dt><dd>U²-Netp · 4.4 MB</dd></div>
+        <div><dt>Model</dt><dd id="m-model">…</dd></div>
         <div><dt>Backend</dt><dd id="m-backend">…</dd></div>
         <div><dt>Load</dt><dd id="m-load">…</dd></div>
         <div><dt>Inference</dt><dd id="m-infer">—</dd></div>
@@ -48,8 +51,9 @@
     </main>
 
     <footer class="colophon">
-      Baseline model: <a href="https://github.com/xuebinqin/U-2-Net">U²-Netp</a> (Apache-2.0), via
-      <a href="https://github.com/danielgatis/rembg">rembg</a>. Inference: ONNX Runtime Web. No uploads.
+      Model: Studio v1, trained for this project on DUTS and DIS5K (research and demo use).
+      Compare with the <a href="?model=u2netp">U²-Netp baseline</a>. Inference: ONNX Runtime Web. No uploads.
+      <a href="https://github.com/JuanPRG/studio-cutouts">Source</a>.
     </footer>
 
     <script type="module" src="/src/main.ts"></script>
