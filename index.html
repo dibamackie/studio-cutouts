@@ -40,7 +40,8 @@
           <li>
             <strong>Keep the phone still and turn the object.</strong> Prop the phone on a stand or a stack of books, put
             the object on a lazy Susan, a swivel stool or a plate, and film one slow turn. Turning a bit more than once is
-            fine: the app finds where one full turn ends and keeps exactly that.
+            fine: the app finds where one full turn ends and keeps exactly that. A plate or turntable that stands out from
+            the background may be kept as part of the product, so pick one close to the background's colour.
           </li>
           <li>
             <strong>No turntable?</strong> Turn the object by hand about 10–15° at a time and take a photo after each turn,
@@ -65,7 +66,10 @@
         <div class="viewer-bar">
           <button id="play" type="button" hidden aria-pressed="false">Pause</button>
           <span id="frame" class="frame-count" hidden>1 / 1</span>
-          <button id="toggle" type="button" aria-pressed="false">Show original</button>
+          <span class="seg" role="group" aria-label="View">
+            <button type="button" data-view="studio" aria-pressed="true">Studio</button>
+            <button type="button" data-view="original" aria-pressed="false">Original</button>
+          </span>
         </div>
 
         <fieldset class="backdrops">

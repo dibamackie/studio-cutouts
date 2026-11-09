@@ -18,11 +18,12 @@ describe('buildEmbedHtml', () => {
     expect(buildEmbedHtml([frame], 'rgb(0 0 0)')).not.toContain('id="play"');
   });
 
-  test('originals add a Show original toggle and are packed alongside', () => {
+  test('originals add a Studio | Original switch, starting on Studio, and are packed alongside', () => {
     const plain = buildEmbedHtml([frame, frame], 'rgb(0 0 0)');
-    expect(plain).not.toContain('id="view"');
+    expect(plain).not.toContain('data-view="original"');
     const both = buildEmbedHtml([frame, frame], 'rgb(0 0 0)', { originals: [frame, frame] });
-    expect(both).toContain('id="view"');
+    expect(both).toContain('data-view="studio" aria-pressed="true"'); // starts in studio mode, and says so
+    expect(both).toContain('data-view="original" aria-pressed="false"');
     expect(both.match(/data:image\/webp;base64,/g)).toHaveLength(4);
   });
 

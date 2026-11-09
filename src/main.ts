@@ -24,7 +24,7 @@ const status = $<HTMLParagraphElement>('status');
 const playButton = $<HTMLButtonElement>('play');
 const frameCount = $<HTMLSpanElement>('frame');
 const spinHint = $<HTMLParagraphElement>('spin-hint');
-const toggle = $<HTMLButtonElement>('toggle');
+const viewButtons = document.querySelectorAll<HTMLButtonElement>('.viewer-bar [data-view]');
 const customColor = $<HTMLInputElement>('custom-color');
 const reflection = $<HTMLInputElement>('reflection');
 const embedButton = $<HTMLButtonElement>('download-embed');
@@ -123,10 +123,10 @@ function clearFrames() {
   frames = [];
 }
 
+/** Studio | Original switch: names both views and highlights the current one. */
 function setOriginal(on: boolean) {
   showingOriginal = on;
-  toggle.textContent = on ? 'Show studio' : 'Show original';
-  toggle.setAttribute('aria-pressed', String(on));
+  for (const b of viewButtons) b.setAttribute('aria-pressed', String((b.dataset.view === 'original') === on));
   spin.redraw();
 }
 
@@ -305,7 +305,7 @@ for (const button of sampleButtons) {
     }
   });
 }
-toggle.addEventListener('click', () => setOriginal(!showingOriginal));
+for (const b of viewButtons) b.addEventListener('click', () => setOriginal(b.dataset.view === 'original'));
 playButton.addEventListener('click', () => (spin.playing ? spin.pause() : spin.play()));
 $('download').addEventListener('click', () => exportFrame('png'));
 $('download-jpg').addEventListener('click', () => exportFrame('jpg'));

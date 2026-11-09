@@ -250,3 +250,9 @@ button.link:hover { transform: none; text-decoration-thickness: 2px; }
 @media (max-width: 720px) {
   .showcase { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Studio | Original switch: both views named, the current one filled */
+.seg { display: inline-flex; padding: 3px; border: 1px solid var(--ink); border-radius: 999px; gap: 2px; }
+.seg button { border: 0; padding: 0.5rem 0.95rem; }
+.seg button:hover { transform: none; background: color-mix(in oklch, var(--ink) 8%, transparent); }
+.seg button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }

@@ -30,9 +30,13 @@ export function buildEmbedHtml(frames: readonly string[], background: string, op
   }
   if (!CSS_COLOR.test(background)) throw new Error(`unexpected background colour: ${background}`);
   const n = frames.length;
+  // The view switch names both states and highlights the current one: a single "Show original" button
+  // reads as if the original were already showing.
   const controls = [
     n > 1 ? '<button type="button" id="play" aria-pressed="true">Pause</button>' : '',
-    originals ? '<button type="button" id="view" aria-pressed="false">Show original</button>' : '',
+    originals
+      ? '<span class="seg" role="group" aria-label="View"><button type="button" data-view="studio" aria-pressed="true">Studio</button><button type="button" data-view="original" aria-pressed="false">Original</button></span>'
+      : '',
   ].join('');
   return `<!doctype html>
 <html lang="en">
@@ -51,6 +55,9 @@ p{position:fixed;left:50%;bottom:${controls ? 52 : 10}px;translate:-50% 0;margin
 nav{position:fixed;left:50%;bottom:10px;translate:-50% 0;display:flex;gap:6px}
 button{font:inherit;color:#fff;background:#000b;border:0;border-radius:99px;padding:6px 13px;cursor:pointer}
 button:hover{background:#000d}
+.seg{display:flex;padding:2px;border-radius:99px;background:#000b}
+.seg button{background:transparent;padding:4px 12px}
+.seg button[aria-pressed="true"]{background:#fff;color:#111}
 </style>
 </head>
 <body>
@@ -62,9 +69,9 @@ ${controls ? `<nav aria-label="Viewer controls">${controls}</nav>` : ''}
 const F=${JSON.stringify(frames)};
 const O=${JSON.stringify(originals ?? [])};
 (()=>{const c=document.querySelector('canvas'),x=c.getContext('2d'),hint=document.querySelector('p'),n=F.length;
-const playBtn=document.getElementById('play'),viewBtn=document.getElementById('view');
+const playBtn=document.getElementById('play'),views=[...document.querySelectorAll('[data-view]')];
 const load=list=>list.map(s=>{const i=new Image();i.src=s;return i});
-const studio=load(F),orig=load(O);
+const studio=load(F);let orig=null;const originals=()=>orig??=load(O); // only decoded once asked for: they'd delay the first studio frame
 let set=studio,i=0,last=0,drag=null,play=n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const show=k=>{i=((k%n)+n)%n;if(!set[i].complete)return;x.drawImage(set[i],0,0,c.width,c.height);
 c.setAttribute('aria-valuenow',i+1);c.setAttribute('aria-valuetext','Frame '+(i+1)+' of '+n)};
@@ -80,9 +87,9 @@ c.onpointerup=c.onpointercancel=()=>{drag=null};
 c.onkeydown=e=>{const t={ArrowRight:i+1,ArrowLeft:i-1,Home:0,End:n-1}[e.key];
 if(t!==undefined){e.preventDefault();stop();show(t)}else if(e.key===' '){e.preventDefault();setPlay(!play)}};
 if(playBtn)playBtn.onclick=()=>{setPlay(!play);if(!play)hint.style.opacity=0};
-if(viewBtn)viewBtn.onclick=()=>{const toOrig=set===studio;set=toOrig?orig:studio;
-viewBtn.textContent=toOrig?'Show studio':'Show original';viewBtn.setAttribute('aria-pressed',toOrig);
-if(set[i].complete)show(i);else set[i].decode().then(()=>show(i))};
+views.forEach(b=>b.onclick=()=>{set=b.dataset.view==='original'?originals():studio;
+views.forEach(v=>v.setAttribute('aria-pressed',v===b));
+if(set[i].complete)show(i);else set[i].decode().then(()=>show(i))});
 })();
 </script>
 </body>

@@ -20,7 +20,7 @@ Product photos that never leave your device. Drop in a product photo, several ph
 
 ![36 phone photos of a pill bottle beside the studio spin made from them](docs/showcase.gif)
 
-36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts.vercel.app) or as a [standalone embed](https://studio-cutouts.vercel.app/showcase/pill-bottle-spin.html) (3.0 MB, with Play/Pause and a Show original toggle, since this one includes the source photos); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
+36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts.vercel.app) or as a [standalone embed](https://studio-cutouts.vercel.app/showcase/pill-bottle-spin.html) (3.0 MB, with Play/Pause and a Studio | Original switch, since this one includes the source photos); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
 
 This capture also found a bug. WhatsApp names photos sent in the same second "x.jpeg", "x (1).jpeg", "x (2).jpeg", and a plain name sort puts "x (1)" before "x.jpeg", so the first photo of every second landed last and the spin jumped back and forth. Names are now compared without their extension (`compareFileNames`, tested on these exact names).
 
@@ -64,7 +64,7 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 | 9:16 clip, 1080×1920, 8 s (two turns), H.264 MP4 | 1.2 s, faster than real time | 1.4 MB ([`docs/mug-clip.mp4`](docs/mug-clip.mp4)) |
 | Embeddable spin, 36 frames at 800 px | 1.4 s | 0.39 MB, one HTML file ([live](https://studio-cutouts.vercel.app/embed/mug-spin.html)) |
 
-The embed needs no server, script tag or third-party request. It has a Play/Pause button (autoplaying motion needs a way to stop it) and, if you tick "Include original photos" when exporting, a Show original toggle. Upload the file anywhere and paste:
+The embed needs no server, script tag or third-party request. It has a Play/Pause button (autoplaying motion needs a way to stop it) and, if you tick "Include original photos" when exporting, a Studio | Original switch. The originals load only when someone picks Original. Upload the file anywhere and paste:
 
 ```html
 <iframe src="https://your-site.example/studio-spin.html" width="600" height="600"
