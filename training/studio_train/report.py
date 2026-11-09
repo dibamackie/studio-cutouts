@@ -12,7 +12,7 @@ from pathlib import Path
 SETS = ("dis-te", "duts-te")
 # Display rows, keyed by (onnx file name, input size), in table order.
 ROWS = [
-    {"key": ("birefnet_lite.onnx", 1024), "label": "BiRefNet_lite", "browser": False},
+    {"key": ("BiRefNet_lite", 1024), "label": "BiRefNet_lite", "browser": False},
     {"key": ("u2netp.onnx", 320), "label": "U²-Netp", "browser": True},
     {"key": ("studio-cutout.fp16.onnx", 384), "label": "Studio v1", "browser": True, "mine": True},
     {"key": ("studio-cutout.fp16.onnx", 512), "label": "Studio v1", "browser": True, "mine": True},
@@ -20,7 +20,7 @@ ROWS = [
 NOTES = "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. U²-Netp was trained on DUTS-TR, so DUTS-TE is its home set."
 BIREFNET_NOTE = (
     " BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU;"
-    " its 224 MB ONNX export is too big to download and run comfortably in a browser. It was trained on DIS-TR."
+    " at 177 MB in fp32 it is too big to download and run comfortably in a browser. Its training data includes DIS5K, so DIS-TE is its home set."
 )
 
 

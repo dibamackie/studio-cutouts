@@ -1,0 +1,2 @@
+{"model": "BiRefNet_lite", "set": "dis-te", "images": 2000, "input_size": 1024, "mb": 177.3, "mae": 0.0133, "iou": 0.902, "max_f": 0.9529, "ms_per_image": 131.8, "device": "cuda"}
+{"model": "BiRefNet_lite", "set": "duts-te", "images": 5019, "input_size": 1024, "mb": 177.3, "mae": 0.0358, "iou": 0.8114, "max_f": 0.8837, "ms_per_image": 132.2, "device": "cuda"}

@@ -1,6 +1,28 @@
 {
   "quality": [
     {
+      "label": "BiRefNet_lite",
+      "megabytes": 177.3,
+      "inputSize": 1024,
+      "browser": false,
+      "scores": {
+        "dis-te": {
+          "max_f": 0.9529,
+          "iou": 0.902,
+          "mae": 0.0133
+        },
+        "duts-te": {
+          "max_f": 0.8837,
+          "iou": 0.8114,
+          "mae": 0.0358
+        }
+      },
+      "images": {
+        "dis-te": 2000,
+        "duts-te": 5019
+      }
+    },
+    {
       "label": "U²-Netp",
       "megabytes": 4.6,
       "inputSize": 320,
@@ -69,5 +91,5 @@
       }
     }
   ],
-  "notes": "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. U²-Netp was trained on DUTS-TR, so DUTS-TE is its home set."
+  "notes": "Studio v1 runs at 512 px on WebGPU and 384 px on the CPU fallback. U²-Netp was trained on DUTS-TR, so DUTS-TE is its home set. BiRefNet_lite is the large reference: 44M parameters at 1024 px, scored on a desktop GPU; at 177 MB in fp32 it is too big to download and run comfortably in a browser. Its training data includes DIS5K, so DIS-TE is its home set."
 }

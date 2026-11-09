@@ -10,12 +10,16 @@ Product cutouts that never leave your device. Drop in a product photo and the br
 
 Studio v1 is a 4.5M-parameter U-Net (9.1 MB fp16) trained for this project; see [training/](training/README.md). Scored on the full public test sets, at each image's own resolution:
 
-| Model | Download | DIS-TE max F | IoU | MAE | DUTS-TE max F | IoU | MAE |
-|---|---|---|---|---|---|---|---|
-| U²-Netp @320 (baseline) | 4.6 MB | 0.637 | 0.392 | 0.147 | 0.852 | 0.739 | 0.053 |
-| **Studio v1 @512** | 9.1 MB | **0.774** | **0.623** | **0.085** | **0.867** | **0.761** | 0.049 |
+| Model | Download | Runs in browser | DIS-TE max F | IoU | MAE | DUTS-TE max F | IoU | MAE |
+|---|---|---|---|---|---|---|---|---|
+| BiRefNet_lite @1024 (large reference) | 177 MB | No | 0.953 | 0.902 | 0.013 | 0.884 | 0.811 | 0.036 |
+| U²-Netp @320 (baseline) | 4.6 MB | Yes | 0.637 | 0.392 | 0.147 | 0.852 | 0.739 | 0.053 |
+| **Studio v1 @512** | 9.1 MB | Yes | **0.774** | **0.623** | **0.085** | **0.867** | **0.761** | **0.049** |
 
-DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5,019) is everyday photos. On DIS-TE, Studio v1 gets +0.14 max F and +0.23 IoU over the baseline.
+DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5,019) is everyday photos. Bold marks the best browser model.
+
+- Studio v1 beats the U²-Netp baseline on every metric, by +0.14 max F and +0.23 IoU on DIS-TE.
+- On everyday photos it reaches 98% of the large BiRefNet_lite's max F at 1/20 of the size. On fine detail BiRefNet is far ahead: DIS5K is in its training data and it sees 4× the pixels. Closing that gap is the v2 plan (see [training/README.md](training/README.md#full-test-sets)).
 
 Speed, median ms per frame, measured with the [benchmark page](https://studio-cutouts.vercel.app/bench.html) (which times any device and copies the results as JSON):
 

@@ -90,11 +90,18 @@ The first run at each new input size recompiles GPU shaders (120–830 ms), so t
 
 All of DIS-TE (2,000 images, none used for training or model selection) and DUTS-TE (5,019), fp16 ONNX, each image scored at its own resolution. Raw output: [`results/bench-full.jsonl`](results/bench-full.jsonl).
 
-| Model | DIS-TE max F | IoU | MAE | DUTS-TE max F | IoU | MAE |
-|---|---|---|---|---|---|---|
-| U²-Netp @320 | 0.637 | 0.392 | 0.147 | 0.852 | 0.739 | 0.053 |
-| Studio v1 @384 | 0.767 | 0.612 | 0.089 | 0.864 | 0.759 | **0.048** |
-| **Studio v1 @512** | **0.774** | **0.623** | **0.085** | **0.867** | **0.761** | 0.049 |
+| Model | Size | DIS-TE max F | IoU | MAE | DUTS-TE max F | IoU | MAE |
+|---|---|---|---|---|---|---|---|
+| BiRefNet_lite @1024 (reference) | 177 MB | **0.953** | **0.902** | **0.013** | **0.884** | **0.811** | **0.036** |
+| U²-Netp @320 | 4.6 MB | 0.637 | 0.392 | 0.147 | 0.852 | 0.739 | 0.053 |
+| Studio v1 @384 | 9.1 MB | 0.767 | 0.612 | 0.089 | 0.864 | 0.759 | 0.048 |
+| Studio v1 @512 | 9.1 MB | 0.774 | 0.623 | 0.085 | 0.867 | 0.761 | 0.049 |
+
+Raw BiRefNet output: [`results/bench-birefnet.jsonl`](results/bench-birefnet.jsonl).
+
+- **Against the baseline:** Studio v1 beats U²-Netp on every metric, by +0.14 max F on DIS-TE.
+- **Against the large reference:** on everyday photos Studio v1 reaches 98% of BiRefNet_lite's max F (0.867 vs 0.884) at 1/20 of the size, and it runs in a browser. On fine detail BiRefNet is far ahead (0.953 vs 0.774). DIS5K is in its training data, and it sees 4× the pixels (1024 vs 512 px). That gap is the target for a v2: train at higher resolution, add an edge-refinement stage, and weight fine-detail data more.
+- **How BiRefNet was scored:** its original PyTorch code from Hugging Face ([ZhengPeng7/BiRefNet_lite](https://huggingface.co/ZhengPeng7/BiRefNet_lite), MIT), pinned to a reviewed revision, fp16 on the RTX 3070, about 130 ms per image. The community ONNX export ran at about one image per minute on the same GPU, because `deform_conv2d` has no native ONNX operator.
 
 The page's data file is generated from this output, so the website never shows numbers that weren't measured:
 

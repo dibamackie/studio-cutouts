@@ -10,3 +10,5 @@ numpy
 tqdm
 gdown
 pytest
+# Optional, only for scoring the BiRefNet_lite reference (evaluate.py --preset birefnet):
+#   pip install transformers kornia einops

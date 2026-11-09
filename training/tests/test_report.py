@@ -13,7 +13,7 @@ def test_builds_rows_in_display_order_and_skips_incomplete_models():
         _rec("studio-cutout.fp16.onnx", 512, "duts-te", 0.87),
         _rec("u2netp.onnx", 320, "dis-te", 0.63),
         _rec("u2netp.onnx", 320, "duts-te", 0.86),
-        _rec("birefnet_lite.onnx", 1024, "dis-te", 0.85),  # no duts-te yet: skipped, not half-shown
+        _rec("BiRefNet_lite", 1024, "dis-te", 0.85),  # no duts-te yet: skipped, not half-shown
     ]
     out = build(records)
     assert [(r["label"], r["inputSize"]) for r in out["quality"]] == [("U²-Netp", 320), ("Studio v1", 512)]
@@ -30,5 +30,5 @@ def test_fails_when_nothing_is_complete():
 def test_birefnet_note_only_appears_with_its_row():
     base = [_rec("u2netp.onnx", 320, s, 0.8) for s in ("dis-te", "duts-te")]
     assert "BiRefNet" not in build(base)["notes"]
-    with_ref = base + [_rec("birefnet_lite.onnx", 1024, s, 0.9) for s in ("dis-te", "duts-te")]
+    with_ref = base + [_rec("BiRefNet_lite", 1024, s, 0.9) for s in ("dis-te", "duts-te")]
     assert "BiRefNet" in build(with_ref)["notes"]
