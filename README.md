@@ -1,6 +1,6 @@
 # Studio
 
-**[Try it live](https://studio-cutouts.vercel.app)** · **[Benchmarks](https://studio-cutouts.vercel.app/bench.html)** · **[Real-phone showcase](#from-a-real-phone)** · **[Sample embed](https://studio-cutouts.vercel.app/embed/mug-spin.html)**
+**[Try it live](https://studio-cutouts-three.vercel.app)** · **[Benchmarks](https://studio-cutouts-three.vercel.app/bench.html)** · **[Real-phone showcase](#from-a-real-phone)** · **[Sample embed](https://studio-cutouts-three.vercel.app/embed/mug-spin.html)**
 
 ![A phone walkaround of a mug beside the studio spin the app made from it](docs/hero.gif)
 
@@ -20,7 +20,7 @@ Product photos that never leave your device. Drop in a product photo, several ph
 
 ![36 phone photos of a pill bottle beside the studio spin made from them](docs/showcase.gif)
 
-36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts.vercel.app) or as a [standalone embed](https://studio-cutouts.vercel.app/showcase/pill-bottle-spin.html) (3.0 MB, with Play/Pause and a Studio | Original switch, since this one includes the source photos); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
+36 photos of a pill bottle, turned by hand about 10° at a time on a couch armrest and sent over WhatsApp. Dropped into Studio, they became a 36-frame studio spin in **2.8 s** (18.8 ms per cutout on WebGPU). See it live and draggable on the [home page](https://studio-cutouts-three.vercel.app) or as a [standalone embed](https://studio-cutouts-three.vercel.app/showcase/pill-bottle-spin.html) (3.0 MB, with Play/Pause and a Studio | Original switch, since this one includes the source photos); there's also a [9:16 clip](docs/showcase-clip.mp4) and a [studio JPG](docs/showcase-studio.jpg).
 
 What's left of the unevenness is in the photos themselves. Tracking how far the label slides between photos puts the hand-turned steps at roughly 8°–18° (one pair is nearly identical), adding up to about 360°. The viewer's crossfade hides most of that. A turntable video, or marks every 10° on a sheet under the object, removes it at the source. Automatic re-timing was tried and rejected: the same tracking reads a plain red mug's perfectly even orbit as steps from 0° to 30°.
 
@@ -38,7 +38,7 @@ This capture also found a bug. WhatsApp names photos sent in the same second "x.
 
 DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5,019) is everyday photos. Bold marks the best browser model. Training details and the evaluation code are in [training/](training/README.md).
 
-**Speed**, median ms per frame, from the [benchmark page](https://studio-cutouts.vercel.app/bench.html), which times any device and copies the results as JSON:
+**Speed**, median ms per frame, from the [benchmark page](https://studio-cutouts-three.vercel.app/bench.html), which times any device and copies the results as JSON:
 
 | Device | Studio v1 WebGPU | Studio v1 WASM | U²-Netp WebGPU | U²-Netp WASM |
 |---|---|---|---|---|
@@ -67,7 +67,7 @@ DIS-TE (2,000 images) is fine detail: chairs, bikes, plants, jewelry. DUTS-TE (5
 | Export | Time | Size |
 |---|---|---|
 | 9:16 clip, 1080×1920, 8 s (two turns), H.264 MP4 | 1.2 s, faster than real time | 1.4 MB ([`docs/mug-clip.mp4`](docs/mug-clip.mp4)) |
-| Embeddable spin, 36 frames at 800 px | 1.4 s | 0.39 MB, one HTML file ([live](https://studio-cutouts.vercel.app/embed/mug-spin.html)) |
+| Embeddable spin, 36 frames at 800 px | 1.4 s | 0.39 MB, one HTML file ([live](https://studio-cutouts-three.vercel.app/embed/mug-spin.html)) |
 
 The embed needs no server, script tag or third-party request. Its autoplay crossfades between frames like the clip does, which hides small uneven steps in hand-turned photos. It has a Play/Pause button (autoplaying motion needs a way to stop it) and, if you tick "Include original photos" when exporting, a Studio | Original switch. The originals load only when someone picks Original. Upload the file anywhere and paste:
 
